@@ -1,5 +1,8 @@
 import React, { useRef } from 'react';
-import { Edge, Node } from 'reactflow';
+import type { Edge, Node } from 'reactflow';
+import { ListTree, Save, Upload, CirclePlay, GitBranch, Users, CircleStop } from 'lucide-react';
+import { SidebarButton } from './SidebarButton';
+import { SidebarNode } from './SidebarNode';
 
 interface SidebarProps {
   onOrganize: () => void;
@@ -9,11 +12,6 @@ interface SidebarProps {
 
 export function Sidebar({ onOrganize, onSave, onLoad }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const onDragStart = (event: React.DragEvent, nodeType: string) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.effectAllowed = 'move';
-  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -36,81 +34,21 @@ export function Sidebar({ onOrganize, onSave, onLoad }: SidebarProps) {
   };
 
   return (
-    <aside style={{ width: 120, padding: 10, borderRight: '1px solid #ddd', background: '#f7f7f7' }}>
-      <button
-        onClick={onOrganize}
-        style={{
-          width: '100%',
-          marginBottom: 10,
-          padding: 8,
-          border: '1px solid #555',
-          borderRadius: 4,
-          cursor: 'pointer',
-        }}
-      >
-        Organizar
-      </button>
-      <button
-        onClick={onSave}
-        style={{
-          width: '100%',
-          marginBottom: 10,
-          padding: 8,
-          border: '1px solid #555',
-          borderRadius: 4,
-          cursor: 'pointer',
-        }}
-      >
-        Salvar JSON
-      </button>
-      <button
-        onClick={triggerFileSelect}
-        style={{
-          width: '100%',
-          marginBottom: 10,
-          padding: 8,
-          border: '1px solid #555',
-          borderRadius: 4,
-          cursor: 'pointer',
-        }}
-      >
-        Importar JSON
-      </button>
+    <aside className="w-40 p-3 border-r border-gray-300 bg-gray-50">
+      <SidebarButton label="Organizar" icon={ListTree} onClick={onOrganize} />
+      <SidebarButton label="Salvar JSON" icon={Save} onClick={onSave} />
+      <SidebarButton label="Importar JSON" icon={Upload} onClick={triggerFileSelect} />
       <input
         type="file"
         accept="application/json"
         ref={fileInputRef}
         onChange={handleFileChange}
-        style={{ display: 'none' }}
+        className="hidden"
       />
-      <div
-        onDragStart={(event) => onDragStart(event, 'start')}
-        draggable
-        style={{ marginBottom: 10, padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
-      >
-        Início
-      </div>
-      <div
-        onDragStart={(event) => onDragStart(event, 'decision')}
-        draggable
-        style={{ marginBottom: 10, padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
-      >
-        Decisão
-      </div>
-      <div
-        onDragStart={(event) => onDragStart(event, 'alcada')}
-        draggable
-        style={{ marginBottom: 10, padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
-      >
-        Alçada
-      </div>
-      <div
-        onDragStart={(event) => onDragStart(event, 'end')}
-        draggable
-        style={{ padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
-      >
-        Fim
-      </div>
+      <SidebarNode type="start" label="Início" icon={CirclePlay} />
+      <SidebarNode type="decision" label="Decisão" icon={GitBranch} />
+      <SidebarNode type="alcada" label="Alçada" icon={Users} />
+      <SidebarNode type="end" label="Fim" icon={CircleStop} />
     </aside>
   );
 }
