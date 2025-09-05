@@ -21,6 +21,13 @@ export function Sidebar() {
         Decisão
       </div>
       <div
+        onDragStart={(event) => onDragStart(event, 'alcada')}
+        draggable
+        style={{ marginBottom: 10, padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
+      >
+        Alçada
+      </div>
+      <div
         onDragStart={(event) => onDragStart(event, 'end')}
         draggable
         style={{ padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}

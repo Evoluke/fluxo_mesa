@@ -20,8 +20,9 @@ import { StartNode } from './nodes/StartNode';
 import { EndNode } from './nodes/EndNode';
 import { DecisionNode } from './nodes/DecisionNode';
 import { DecisionType } from '../../types/decision';
+import { AlcadaNode } from './nodes/AlcadaNode';
 
-const nodeTypes = { start: StartNode, end: EndNode, decision: DecisionNode };
+const nodeTypes = { start: StartNode, end: EndNode, decision: DecisionNode, alcada: AlcadaNode };
 
 export default function FlowBuilder() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -71,8 +72,16 @@ export default function FlowBuilder() {
         type,
         position,
         data: {
-          label: type === 'start' ? 'Início' : type === 'end' ? 'Fim' : 'Decisão',
+          label:
+            type === 'start'
+              ? 'Início'
+              : type === 'end'
+              ? 'Fim'
+              : type === 'decision'
+              ? 'Decisão'
+              : 'Alçada',
           decisionType: type === 'decision' ? DecisionType.RISCO : undefined,
+          levels: type === 'alcada' ? [] : undefined,
         },
       };
 
