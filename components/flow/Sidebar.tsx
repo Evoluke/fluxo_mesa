@@ -5,6 +5,7 @@ import { SidebarNodeItem } from './SidebarNodeItem';
 import {
   Wand2,
   Save,
+  FileCode,
   Upload,
   Play,
   GitBranch,
@@ -17,12 +18,13 @@ import {
 
 interface SidebarProps {
   onOrganize: () => void;
-  onSave: () => void;
+  onSaveJson: () => void;
+  onSaveBpmn: () => void;
   onLoad: (flow: { nodes: Node[]; edges: Edge[] }) => void;
   onDelete: () => void;
 }
 
-export function Sidebar({ onOrganize, onSave, onLoad, onDelete }: SidebarProps) {
+export function Sidebar({ onOrganize, onSaveJson, onSaveBpmn, onLoad, onDelete }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [toolsOpen, setToolsOpen] = useState(true);
   const [nodesOpen, setNodesOpen] = useState(true);
@@ -65,7 +67,8 @@ export function Sidebar({ onOrganize, onSave, onLoad, onDelete }: SidebarProps) 
         {toolsOpen && (
           <div>
             <SidebarButton label="Organizar" icon={Wand2} onClick={onOrganize} />
-            <SidebarButton label="Salvar JSON" icon={Save} onClick={onSave} />
+            <SidebarButton label="Salvar JSON" icon={Save} onClick={onSaveJson} />
+            <SidebarButton label="Salvar BPMN" icon={FileCode} onClick={onSaveBpmn} />
             <SidebarButton label="Importar JSON" icon={Upload} onClick={triggerFileSelect} />
             <input
               type="file"

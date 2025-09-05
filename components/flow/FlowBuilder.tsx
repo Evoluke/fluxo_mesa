@@ -202,6 +202,41 @@ export default function FlowBuilder() {
     URL.revokeObjectURL(url);
   }, [reactFlowInstance]);
 
+  const saveBpmn = useCallback(() => {
+    if (!reactFlowInstance) return;
+    const flow = reactFlowInstance.toObject();
+
+    const bpmnNodes = flow.nodes
+      .map((n: Node) => {
+        const label = (n.data as { label?: string })?.label || '';
+        switch (n.type) {
+          case 'start':
+            return `<bpmn:startEvent id="${n.id}" name="${label}" />`;
+          case 'end':
+            return `<bpmn:endEvent id="${n.id}" name="${label}" />`;
+          case 'decision':
+            return `<bpmn:exclusiveGateway id="${n.id}" name="${label}" />`;
+          default:
+            return `<bpmn:task id="${n.id}" name="${label}" />`;
+        }
+      })
+      .join('\n    ');
+
+    const bpmnEdges = flow.edges
+      .map((e: Edge) => `<bpmn:sequenceFlow id="${e.id}" sourceRef="${e.source}" targetRef="${e.target}" />`)
+      .join('\n    ');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">\n  <bpmn:process id="Process_1">\n    ${bpmnNodes}\n    ${bpmnEdges}\n  </bpmn:process>\n</bpmn:definitions>`;
+
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fluxo.bpmn';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [reactFlowInstance]);
+
   const loadFlow = useCallback(
     (flow: { nodes: Node[]; edges: Edge[] }) => {
       if (!flow) return;
@@ -219,7 +254,13 @@ export default function FlowBuilder() {
   return (
     <ReactFlowProvider>
       <div style={{ display: 'flex', height: '100%' }}>
-        <Sidebar onOrganize={organizeFlow} onSave={saveFlow} onLoad={loadFlow} onDelete={deleteSelected} />
+        <Sidebar
+          onOrganize={organizeFlow}
+          onSaveJson={saveFlow}
+          onSaveBpmn={saveBpmn}
+          onLoad={loadFlow}
+          onDelete={deleteSelected}
+        />
         <div style={{ flex: 1, height: '100%' }} ref={reactFlowWrapper}>
           <ReactFlow
             nodes={nodes}
