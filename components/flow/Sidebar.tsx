@@ -1,8 +1,19 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Edge, Node } from 'reactflow';
 import { SidebarButton } from './SidebarButton';
 import { SidebarNodeItem } from './SidebarNodeItem';
-import { Wand2, Save, Upload, Play, GitBranch, Shield, Flag, Trash } from 'lucide-react';
+import {
+  Wand2,
+  Save,
+  Upload,
+  Play,
+  GitBranch,
+  Shield,
+  Flag,
+  Trash,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 
 interface SidebarProps {
   onOrganize: () => void;
@@ -13,6 +24,8 @@ interface SidebarProps {
 
 export function Sidebar({ onOrganize, onSave, onLoad, onDelete }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [toolsOpen, setToolsOpen] = useState(true);
+  const [nodesOpen, setNodesOpen] = useState(true);
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
@@ -41,21 +54,47 @@ export function Sidebar({ onOrganize, onSave, onLoad, onDelete }: SidebarProps) 
 
   return (
     <aside className="sidebar">
-      <SidebarButton label="Organizar" icon={Wand2} onClick={onOrganize} />
-      <SidebarButton label="Salvar JSON" icon={Save} onClick={onSave} />
-      <SidebarButton label="Importar JSON" icon={Upload} onClick={triggerFileSelect} />
-      <input
-        type="file"
-        accept="application/json"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        style={{ display: 'none' }}
-      />
-      <SidebarButton label="Deletar Selecionados" icon={Trash} onClick={onDelete} />
-      <SidebarNodeItem nodeType="start" label="Início" icon={Play} onDragStart={onDragStart} />
-      <SidebarNodeItem nodeType="decision" label="Decisão" icon={GitBranch} onDragStart={onDragStart} />
-      <SidebarNodeItem nodeType="alcada" label="Alçada" icon={Shield} onDragStart={onDragStart} />
-      <SidebarNodeItem nodeType="end" label="Fim" icon={Flag} onDragStart={onDragStart} />
+      <div className="sidebar-section">
+        <button
+          className="sidebar-section-toggle"
+          onClick={() => setToolsOpen((o) => !o)}
+        >
+          {toolsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          Ferramentas
+        </button>
+        {toolsOpen && (
+          <div>
+            <SidebarButton label="Organizar" icon={Wand2} onClick={onOrganize} />
+            <SidebarButton label="Salvar JSON" icon={Save} onClick={onSave} />
+            <SidebarButton label="Importar JSON" icon={Upload} onClick={triggerFileSelect} />
+            <input
+              type="file"
+              accept="application/json"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+            <SidebarButton label="Deletar Selecionados" icon={Trash} onClick={onDelete} />
+          </div>
+        )}
+      </div>
+      <div className="sidebar-section">
+        <button
+          className="sidebar-section-toggle"
+          onClick={() => setNodesOpen((o) => !o)}
+        >
+          {nodesOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          Nodes
+        </button>
+        {nodesOpen && (
+          <div>
+            <SidebarNodeItem nodeType="start" label="Início" icon={Play} onDragStart={onDragStart} />
+            <SidebarNodeItem nodeType="decision" label="Decisão" icon={GitBranch} onDragStart={onDragStart} />
+            <SidebarNodeItem nodeType="alcada" label="Alçada" icon={Shield} onDragStart={onDragStart} />
+            <SidebarNodeItem nodeType="end" label="Fim" icon={Flag} onDragStart={onDragStart} />
+          </div>
+        )}
+      </div>
     </aside>
   );
 }
