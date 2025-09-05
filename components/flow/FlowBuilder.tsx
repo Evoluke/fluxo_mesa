@@ -81,10 +81,60 @@ export default function FlowBuilder() {
     [reactFlowInstance, setNodes]
   );
 
+  const organizeFlow = useCallback(() => {
+    if (nodes.length === 0) return;
+
+    const levelHeight = 150;
+    const nodeWidth = 180;
+    const nodeMargin = 50;
+
+    const levelMap: Record<string, number> = {};
+
+    const start = nodes.find((n) => n.type === 'start') || nodes[0];
+    const queue: { id: string; level: number }[] = [];
+    levelMap[start.id] = 0;
+    queue.push({ id: start.id, level: 0 });
+
+    while (queue.length > 0) {
+      const { id, level } = queue.shift()!;
+      edges
+        .filter((e) => e.source === id)
+        .forEach((e) => {
+          if (levelMap[e.target] == null) {
+            levelMap[e.target] = level + 1;
+            queue.push({ id: e.target, level: level + 1 });
+          }
+        });
+    }
+
+    const levels: Record<number, Node[]> = {};
+    nodes.forEach((n) => {
+      const lvl = levelMap[n.id] ?? 0;
+      if (!levels[lvl]) levels[lvl] = [];
+      levels[lvl].push(n);
+    });
+
+    const newNodes = nodes.map((n) => {
+      const lvl = levelMap[n.id] ?? 0;
+      const siblings = levels[lvl];
+      const index = siblings.findIndex((s) => s.id === n.id);
+      return {
+        ...n,
+        position: {
+          x: index * (nodeWidth + nodeMargin),
+          y: lvl * levelHeight,
+        },
+      };
+    });
+
+    setNodes(newNodes);
+    reactFlowInstance?.fitView();
+  }, [nodes, edges, setNodes, reactFlowInstance]);
+
   return (
     <ReactFlowProvider>
       <div style={{ display: 'flex', height: '100%' }}>
-        <Sidebar />
+        <Sidebar onOrganize={organizeFlow} />
         <div style={{ flex: 1, height: '100%' }} ref={reactFlowWrapper}>
           <ReactFlow
             nodes={nodes}
