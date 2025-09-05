@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -29,6 +29,40 @@ export default function FlowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+
+  const historyRef = useRef<{ nodes: Node[]; edges: Edge[] }[]>([]);
+  const historyIndexRef = useRef(-1);
+  const isUndoRef = useRef(false);
+
+  const undo = useCallback(() => {
+    if (historyIndexRef.current <= 0) return;
+    historyIndexRef.current -= 1;
+    const state = historyRef.current[historyIndexRef.current];
+    isUndoRef.current = true;
+    setNodes(state.nodes);
+    setEdges(state.edges);
+  }, [setNodes, setEdges]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+        event.preventDefault();
+        undo();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undo]);
+
+  useEffect(() => {
+    if (isUndoRef.current) {
+      isUndoRef.current = false;
+      return;
+    }
+    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    historyRef.current.push({ nodes, edges });
+    historyIndexRef.current += 1;
+  }, [nodes, edges]);
 
   const onConnect = useCallback(
     (params: Connection) => {
