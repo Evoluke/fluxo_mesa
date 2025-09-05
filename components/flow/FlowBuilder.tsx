@@ -109,18 +109,20 @@ export default function FlowBuilder() {
     const levelMap: Record<string, number> = {};
 
     const start = nodes.find((n) => n.type === 'start') || nodes[0];
-    const queue: { id: string; level: number }[] = [];
+    const queue: string[] = [];
     levelMap[start.id] = 0;
-    queue.push({ id: start.id, level: 0 });
+    queue.push(start.id);
 
     while (queue.length > 0) {
-      const { id, level } = queue.shift()!;
+      const id = queue.shift()!;
+      const currentLevel = levelMap[id];
       edges
         .filter((e) => e.source === id)
         .forEach((e) => {
-          if (levelMap[e.target] == null) {
-            levelMap[e.target] = level + 1;
-            queue.push({ id: e.target, level: level + 1 });
+          const nextLevel = currentLevel + 1;
+          if (levelMap[e.target] == null || nextLevel > levelMap[e.target]) {
+            levelMap[e.target] = nextLevel;
+            queue.push(e.target);
           }
         });
     }
