@@ -148,10 +148,32 @@ export default function FlowBuilder() {
     reactFlowInstance?.fitView();
   }, [nodes, edges, setNodes, reactFlowInstance]);
 
+  const saveFlow = useCallback(() => {
+    if (!reactFlowInstance) return;
+    const flow = reactFlowInstance.toObject();
+    const json = JSON.stringify(flow, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fluxo.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [reactFlowInstance]);
+
+  const loadFlow = useCallback(
+    (flow: { nodes: Node[]; edges: Edge[] }) => {
+      if (!flow) return;
+      setNodes(flow.nodes || []);
+      setEdges(flow.edges || []);
+    },
+    [setNodes, setEdges]
+  );
+
   return (
     <ReactFlowProvider>
       <div style={{ display: 'flex', height: '100%' }}>
-        <Sidebar onOrganize={organizeFlow} />
+        <Sidebar onOrganize={organizeFlow} onSave={saveFlow} onLoad={loadFlow} />
         <div style={{ flex: 1, height: '100%' }} ref={reactFlowWrapper}>
           <ReactFlow
             nodes={nodes}
@@ -165,7 +187,7 @@ export default function FlowBuilder() {
             nodeTypes={nodeTypes}
             fitView
           >
-            <MiniMap style={{ left: 10, bottom: 10 }} />
+            <MiniMap style={{ right: 10, bottom: 10 }} />
             <Controls />
             <Background />
           </ReactFlow>
