@@ -21,6 +21,7 @@ import { EndNode } from './nodes/EndNode';
 import { DecisionNode } from './nodes/DecisionNode';
 import { DecisionType, RiskLevel } from '../../types/decision';
 import { AlcadaNode } from './nodes/AlcadaNode';
+import { generateBpmnXml } from '../../utils/bpmn';
 
 const nodeTypes = { start: StartNode, end: EndNode, decision: DecisionNode, alcada: AlcadaNode };
 
@@ -205,28 +206,7 @@ export default function FlowBuilder() {
   const saveBpmn = useCallback(() => {
     if (!reactFlowInstance) return;
     const flow = reactFlowInstance.toObject();
-
-    const bpmnNodes = flow.nodes
-      .map((n: Node) => {
-        const label = (n.data as { label?: string })?.label || '';
-        switch (n.type) {
-          case 'start':
-            return `<bpmn:startEvent id="${n.id}" name="${label}" />`;
-          case 'end':
-            return `<bpmn:endEvent id="${n.id}" name="${label}" />`;
-          case 'decision':
-            return `<bpmn:exclusiveGateway id="${n.id}" name="${label}" />`;
-          default:
-            return `<bpmn:task id="${n.id}" name="${label}" />`;
-        }
-      })
-      .join('\n    ');
-
-    const bpmnEdges = flow.edges
-      .map((e: Edge) => `<bpmn:sequenceFlow id="${e.id}" sourceRef="${e.source}" targetRef="${e.target}" />`)
-      .join('\n    ');
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">\n  <bpmn:process id="Process_1">\n    ${bpmnNodes}\n    ${bpmnEdges}\n  </bpmn:process>\n</bpmn:definitions>`;
+    const xml = generateBpmnXml(flow);
 
     const blob = new Blob([xml], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);
