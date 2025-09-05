@@ -35,11 +35,15 @@ export default function FlowBuilder() {
       const sourceNode = nodes.find((n) => n.id === params.source);
       const targetNode = nodes.find((n) => n.id === params.target);
 
-      if (sourceNode?.type === 'start' && edges.some((e) => e.source === sourceNode.id)) {
+      if (targetNode?.type === 'decision' && edges.some((e) => e.target === targetNode.id)) {
         return;
       }
 
-      if (targetNode?.type === 'end' && edges.some((e) => e.target === targetNode.id)) {
+      if (targetNode?.type === 'alcada' && edges.some((e) => e.target === targetNode.id)) {
+        return;
+      }
+
+      if (sourceNode?.type === 'alcada' && edges.some((e) => e.source === sourceNode.id)) {
         return;
       }
 
@@ -59,6 +63,9 @@ export default function FlowBuilder() {
 
       const type = event.dataTransfer.getData('application/reactflow');
       if (!type || !reactFlowInstance) return;
+
+      if (type === 'start' && nodes.some((n) => n.type === 'start')) return;
+      if (type === 'end' && nodes.some((n) => n.type === 'end')) return;
 
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
       const position = reactFlowInstance.project({
@@ -88,7 +95,7 @@ export default function FlowBuilder() {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance, setNodes, nodes]
   );
 
   const organizeFlow = useCallback(() => {
