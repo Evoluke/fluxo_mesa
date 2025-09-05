@@ -101,9 +101,10 @@ export default function FlowBuilder() {
   const organizeFlow = useCallback(() => {
     if (nodes.length === 0) return;
 
-    const levelHeight = 150;
     const nodeWidth = 180;
-    const nodeMargin = 50;
+    const nodeHeight = 80;
+    const horizontalSpacing = 50;
+    const verticalSpacing = 50;
 
     const levelMap: Record<string, number> = {};
 
@@ -138,8 +139,8 @@ export default function FlowBuilder() {
       return {
         ...n,
         position: {
-          x: index * (nodeWidth + nodeMargin),
-          y: lvl * levelHeight,
+          x: index * (nodeWidth + horizontalSpacing),
+          y: lvl * (nodeHeight + verticalSpacing),
         },
       };
     });
