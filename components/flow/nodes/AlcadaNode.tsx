@@ -10,7 +10,9 @@ export function AlcadaNode({ data }: NodeProps<AlcadaData>) {
   const adicionar = () => {
     if (lista.length >= 5) return;
     if (lista.includes(selecionado)) return;
-    setLista([...lista, selecionado]);
+    const novaLista = [...lista, selecionado];
+    setLista(novaLista);
+    data.levels = novaLista;
   };
 
   const mover = (from: number, to: number) => {
@@ -19,12 +21,17 @@ export function AlcadaNode({ data }: NodeProps<AlcadaData>) {
       const item = copy[from];
       copy.splice(from, 1);
       copy.splice(to, 0, item);
+      data.levels = copy;
       return copy;
     });
   };
 
   const remover = (index: number) => {
-    setLista((curr) => curr.filter((_, i) => i !== index));
+    setLista((curr) => {
+      const copy = curr.filter((_, i) => i !== index);
+      data.levels = copy;
+      return copy;
+    });
   };
 
   return (

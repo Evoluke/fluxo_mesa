@@ -19,7 +19,7 @@ import { Sidebar } from './Sidebar';
 import { StartNode } from './nodes/StartNode';
 import { EndNode } from './nodes/EndNode';
 import { DecisionNode } from './nodes/DecisionNode';
-import { DecisionType } from '../../types/decision';
+import { DecisionType, RiskLevel } from '../../types/decision';
 import { AlcadaNode } from './nodes/AlcadaNode';
 
 const nodeTypes = { start: StartNode, end: EndNode, decision: DecisionNode, alcada: AlcadaNode };
@@ -126,6 +126,7 @@ export default function FlowBuilder() {
                   ? 'Decisão'
                   : 'Alçada',
           decisionType: type === 'decision' ? DecisionType.RISCO : undefined,
+          riskLevel: type === 'decision' ? RiskLevel.MEDIO : undefined,
           levels: type === 'alcada' ? [] : undefined,
         },
       };
