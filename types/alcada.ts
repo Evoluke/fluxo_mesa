@@ -19,3 +19,8 @@ export const ALCADA_LABELS: Record<AlcadaTipo, string> = {
   [AlcadaTipo.GERENTE_REGIONAL]: 'Gerente Regional',
   [AlcadaTipo.GERENTE_SEDE]: 'Gerente Sede',
 };
+
+export interface AlcadaData {
+  label: string;
+  levels: AlcadaTipo[];
+}

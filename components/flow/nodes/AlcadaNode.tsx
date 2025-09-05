@@ -1,11 +1,10 @@
-'use client';
-
 import { useState } from 'react';
-import { AlcadaTipo, ALCADA_LABELS } from '../types/alcada';
+import { Handle, NodeProps, Position } from 'reactflow';
+import { AlcadaTipo, ALCADA_LABELS, AlcadaData } from '../../../types/alcada';
 
-export function Alcada() {
+export function AlcadaNode({ data }: NodeProps<AlcadaData>) {
   const [selecionado, setSelecionado] = useState<AlcadaTipo>(AlcadaTipo.ASSISTENTE_1);
-  const [lista, setLista] = useState<AlcadaTipo[]>([]);
+  const [lista, setLista] = useState<AlcadaTipo[]>(data.levels || []);
 
   const adicionar = () => {
     if (lista.length >= 5) return;
@@ -61,6 +60,8 @@ export function Alcada() {
           </li>
         ))}
       </ul>
+      <Handle type="target" position={Position.Top} />
+      <Handle type="source" position={Position.Bottom} />
     </div>
   );
 }
