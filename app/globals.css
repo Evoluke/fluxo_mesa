@@ -6,3 +6,37 @@ body {
   margin: 0;
   font-family: sans-serif;
 }
+
+.sidebar {
+  width: 150px;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+  background: #f7f7f7;
+}
+
+.sidebar-button,
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #fff;
+  transition: background 0.2s;
+}
+
+.sidebar-button:hover,
+.sidebar-item:hover {
+  background: #eee;
+}
+
+.sidebar-button {
+  cursor: pointer;
+}
+
+.sidebar-item {
+  cursor: grab;
+}

@@ -1,5 +1,8 @@
 import React, { useRef } from 'react';
 import { Edge, Node } from 'reactflow';
+import { SidebarButton } from './SidebarButton';
+import { SidebarNodeItem } from './SidebarNodeItem';
+import { Wand2, Save, Upload, Play, GitBranch, Shield, Flag } from 'lucide-react';
 
 interface SidebarProps {
   onOrganize: () => void;
@@ -36,46 +39,10 @@ export function Sidebar({ onOrganize, onSave, onLoad }: SidebarProps) {
   };
 
   return (
-    <aside style={{ width: 120, padding: 10, borderRight: '1px solid #ddd', background: '#f7f7f7' }}>
-      <button
-        onClick={onOrganize}
-        style={{
-          width: '100%',
-          marginBottom: 10,
-          padding: 8,
-          border: '1px solid #555',
-          borderRadius: 4,
-          cursor: 'pointer',
-        }}
-      >
-        Organizar
-      </button>
-      <button
-        onClick={onSave}
-        style={{
-          width: '100%',
-          marginBottom: 10,
-          padding: 8,
-          border: '1px solid #555',
-          borderRadius: 4,
-          cursor: 'pointer',
-        }}
-      >
-        Salvar JSON
-      </button>
-      <button
-        onClick={triggerFileSelect}
-        style={{
-          width: '100%',
-          marginBottom: 10,
-          padding: 8,
-          border: '1px solid #555',
-          borderRadius: 4,
-          cursor: 'pointer',
-        }}
-      >
-        Importar JSON
-      </button>
+    <aside className="sidebar">
+      <SidebarButton label="Organizar" icon={Wand2} onClick={onOrganize} />
+      <SidebarButton label="Salvar JSON" icon={Save} onClick={onSave} />
+      <SidebarButton label="Importar JSON" icon={Upload} onClick={triggerFileSelect} />
       <input
         type="file"
         accept="application/json"
@@ -83,34 +50,10 @@ export function Sidebar({ onOrganize, onSave, onLoad }: SidebarProps) {
         onChange={handleFileChange}
         style={{ display: 'none' }}
       />
-      <div
-        onDragStart={(event) => onDragStart(event, 'start')}
-        draggable
-        style={{ marginBottom: 10, padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
-      >
-        Início
-      </div>
-      <div
-        onDragStart={(event) => onDragStart(event, 'decision')}
-        draggable
-        style={{ marginBottom: 10, padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
-      >
-        Decisão
-      </div>
-      <div
-        onDragStart={(event) => onDragStart(event, 'alcada')}
-        draggable
-        style={{ marginBottom: 10, padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
-      >
-        Alçada
-      </div>
-      <div
-        onDragStart={(event) => onDragStart(event, 'end')}
-        draggable
-        style={{ padding: 8, border: '1px solid #555', borderRadius: 4, cursor: 'grab' }}
-      >
-        Fim
-      </div>
+      <SidebarNodeItem nodeType="start" label="Início" icon={Play} onDragStart={onDragStart} />
+      <SidebarNodeItem nodeType="decision" label="Decisão" icon={GitBranch} onDragStart={onDragStart} />
+      <SidebarNodeItem nodeType="alcada" label="Alçada" icon={Shield} onDragStart={onDragStart} />
+      <SidebarNodeItem nodeType="end" label="Fim" icon={Flag} onDragStart={onDragStart} />
     </aside>
   );
 }

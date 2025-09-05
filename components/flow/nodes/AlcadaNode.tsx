@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Handle, NodeProps, Position } from 'reactflow';
 import { AlcadaTipo, ALCADA_LABELS, AlcadaData } from '../../../types/alcada';
+import { Shield } from 'lucide-react';
 
 export function AlcadaNode({ data }: NodeProps<AlcadaData>) {
   const [selecionado, setSelecionado] = useState<AlcadaTipo>(AlcadaTipo.ASSISTENTE_1);
@@ -27,7 +28,19 @@ export function AlcadaNode({ data }: NodeProps<AlcadaData>) {
   };
 
   return (
-    <div style={{ padding: 10, border: '1px solid #555', borderRadius: 4, background: '#f0f0f0' }}>
+    <div
+      style={{
+        padding: 10,
+        border: '1px solid #555',
+        borderRadius: 4,
+        background: '#f0f0f0',
+        position: 'relative',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+        <Shield size={16} />
+        {data.label || 'Alçada'}
+      </div>
       <div style={{ marginBottom: 8 }}>
         <select value={selecionado} onChange={(e) => setSelecionado(e.target.value as AlcadaTipo)}>
           {Object.values(AlcadaTipo).map((tipo) => (
