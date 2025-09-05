@@ -18,8 +18,10 @@ import 'reactflow/dist/style.css';
 import { Sidebar } from './Sidebar';
 import { StartNode } from './nodes/StartNode';
 import { EndNode } from './nodes/EndNode';
+import { DecisionNode } from './nodes/DecisionNode';
+import { DecisionType } from '../../types/decision';
 
-const nodeTypes = { start: StartNode, end: EndNode };
+const nodeTypes = { start: StartNode, end: EndNode, decision: DecisionNode };
 
 export default function FlowBuilder() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -68,7 +70,10 @@ export default function FlowBuilder() {
         id,
         type,
         position,
-        data: { label: type === 'start' ? 'Início' : 'Fim' },
+        data: {
+          label: type === 'start' ? 'Início' : type === 'end' ? 'Fim' : 'Decisão',
+          decisionType: type === 'decision' ? DecisionType.RISCO : undefined,
+        },
       };
 
       setNodes((nds) => nds.concat(newNode));
