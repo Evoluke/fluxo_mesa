@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { Handle, NodeProps, Position } from 'reactflow';
 import { DecisionData, DecisionType, RiskLevel } from '../../../types/decision';
 import { GitBranch } from 'lucide-react';
@@ -8,6 +8,36 @@ export function DecisionNode({ data }: NodeProps<DecisionData>) {
   const [risk, setRisk] = useState<RiskLevel>(data.riskLevel || RiskLevel.MEDIO);
   const [from, setFrom] = useState<number | undefined>(data.from);
   const [to, setTo] = useState<number | undefined>(data.to);
+
+  const handleTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const newType = e.target.value as DecisionType;
+    setType(newType);
+    data.decisionType = newType;
+    if (newType === DecisionType.RISCO) {
+      data.from = undefined;
+      data.to = undefined;
+    } else {
+      data.riskLevel = undefined;
+    }
+  };
+
+  const handleRiskChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const newRisk = e.target.value as RiskLevel;
+    setRisk(newRisk);
+    data.riskLevel = newRisk;
+  };
+
+  const handleFromChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value ? Number(e.target.value) : undefined;
+    setFrom(value);
+    data.from = value;
+  };
+
+  const handleToChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value ? Number(e.target.value) : undefined;
+    setTo(value);
+    data.to = value;
+  };
 
   return (
     <div
@@ -24,7 +54,7 @@ export function DecisionNode({ data }: NodeProps<DecisionData>) {
         {data.label || 'Decisão'}
       </div>
       <div style={{ marginTop: 4 }}>
-        <select value={type} onChange={(e) => setType(e.target.value as DecisionType)}>
+        <select value={type} onChange={handleTypeChange}>
           <option value={DecisionType.RISCO}>Tipo de risco</option>
           <option value={DecisionType.ENDIVIDAMENTO}>Valor de endividamento</option>
           <option value={DecisionType.PROPOSTA}>Valor da proposta</option>
@@ -32,7 +62,7 @@ export function DecisionNode({ data }: NodeProps<DecisionData>) {
       </div>
       {type === DecisionType.RISCO && (
         <div style={{ marginTop: 4 }}>
-          <select value={risk} onChange={(e) => setRisk(e.target.value as RiskLevel)}>
+          <select value={risk} onChange={handleRiskChange}>
             <option value={RiskLevel.ALTO}>Alto</option>
             <option value={RiskLevel.MEDIO}>Médio</option>
             <option value={RiskLevel.BAIXO}>Baixo</option>
@@ -45,14 +75,14 @@ export function DecisionNode({ data }: NodeProps<DecisionData>) {
             type="number"
             placeholder="de"
             value={from ?? ''}
-            onChange={(e) => setFrom(e.target.value ? Number(e.target.value) : undefined)}
+            onChange={handleFromChange}
             style={{ width: 60, marginRight: 4 }}
           />
           <input
             type="number"
             placeholder="até"
             value={to ?? ''}
-            onChange={(e) => setTo(e.target.value ? Number(e.target.value) : undefined)}
+            onChange={handleToChange}
             style={{ width: 60 }}
           />
         </div>
