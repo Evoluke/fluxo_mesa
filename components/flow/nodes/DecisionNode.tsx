@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Handle, NodeProps, Position } from 'reactflow';
 import { DecisionData, DecisionType, RiskLevel } from '../../../types/decision';
+import { GitBranch } from 'lucide-react';
 
 export function DecisionNode({ data }: NodeProps<DecisionData>) {
   const [type, setType] = useState<DecisionType>(data.decisionType || DecisionType.RISCO);
@@ -9,8 +10,19 @@ export function DecisionNode({ data }: NodeProps<DecisionData>) {
   const [to, setTo] = useState<number | undefined>(data.to);
 
   return (
-    <div style={{ padding: 10, border: '1px solid #555', borderRadius: 4, background: '#e2e2f7' }}>
-      {data.label || 'Decisão'}
+    <div
+      style={{
+        padding: 10,
+        border: '1px solid #555',
+        borderRadius: 4,
+        background: '#e2e2f7',
+        position: 'relative',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <GitBranch size={16} />
+        {data.label || 'Decisão'}
+      </div>
       <div style={{ marginTop: 4 }}>
         <select value={type} onChange={(e) => setType(e.target.value as DecisionType)}>
           <option value={DecisionType.RISCO}>Tipo de risco</option>

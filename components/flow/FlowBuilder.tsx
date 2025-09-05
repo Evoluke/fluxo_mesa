@@ -89,7 +89,6 @@ export default function FlowBuilder() {
                   : 'Alçada',
           decisionType: type === 'decision' ? DecisionType.RISCO : undefined,
           levels: type === 'alcada' ? [] : undefined,
-
         },
       };
 
@@ -190,7 +189,23 @@ export default function FlowBuilder() {
             nodeTypes={nodeTypes}
             fitView
           >
-            <MiniMap style={{ right: 10, bottom: 10 }} />
+            <MiniMap
+              style={{ right: 10, bottom: 10 }}
+              nodeColor={(n) => {
+                switch (n.type) {
+                  case 'start':
+                    return '#6ede87';
+                  case 'end':
+                    return '#ff6b6b';
+                  case 'decision':
+                    return '#ffd966';
+                  case 'alcada':
+                    return '#6ba5ff';
+                  default:
+                    return '#ccc';
+                }
+              }}
+            />
             <Controls />
             <Background />
           </ReactFlow>
