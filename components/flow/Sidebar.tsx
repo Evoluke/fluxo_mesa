@@ -2,15 +2,16 @@ import React, { useRef } from 'react';
 import { Edge, Node } from 'reactflow';
 import { SidebarButton } from './SidebarButton';
 import { SidebarNodeItem } from './SidebarNodeItem';
-import { Wand2, Save, Upload, Play, GitBranch, Shield, Flag } from 'lucide-react';
+import { Wand2, Save, Upload, Play, GitBranch, Shield, Flag, Trash } from 'lucide-react';
 
 interface SidebarProps {
   onOrganize: () => void;
   onSave: () => void;
   onLoad: (flow: { nodes: Node[]; edges: Edge[] }) => void;
+  onDelete: () => void;
 }
 
-export function Sidebar({ onOrganize, onSave, onLoad }: SidebarProps) {
+export function Sidebar({ onOrganize, onSave, onLoad, onDelete }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
@@ -50,6 +51,7 @@ export function Sidebar({ onOrganize, onSave, onLoad }: SidebarProps) {
         onChange={handleFileChange}
         style={{ display: 'none' }}
       />
+      <SidebarButton label="Deletar Selecionados" icon={Trash} onClick={onDelete} />
       <SidebarNodeItem nodeType="start" label="Início" icon={Play} onDragStart={onDragStart} />
       <SidebarNodeItem nodeType="decision" label="Decisão" icon={GitBranch} onDragStart={onDragStart} />
       <SidebarNodeItem nodeType="alcada" label="Alçada" icon={Shield} onDragStart={onDragStart} />

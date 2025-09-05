@@ -43,6 +43,10 @@ export default function FlowBuilder() {
         return;
       }
 
+      if (sourceNode?.type === 'decision' && edges.some((e) => e.source === sourceNode.id)) {
+        return;
+      }
+
       if (sourceNode?.type === 'alcada' && edges.some((e) => e.source === sourceNode.id)) {
         return;
       }
@@ -172,10 +176,15 @@ export default function FlowBuilder() {
     [setNodes, setEdges]
   );
 
+  const deleteSelected = useCallback(() => {
+    setNodes((nds) => nds.filter((n) => !n.selected));
+    setEdges((eds) => eds.filter((e) => !e.selected));
+  }, [setNodes, setEdges]);
+
   return (
     <ReactFlowProvider>
       <div style={{ display: 'flex', height: '100%' }}>
-        <Sidebar onOrganize={organizeFlow} onSave={saveFlow} onLoad={loadFlow} />
+        <Sidebar onOrganize={organizeFlow} onSave={saveFlow} onLoad={loadFlow} onDelete={deleteSelected} />
         <div style={{ flex: 1, height: '100%' }} ref={reactFlowWrapper}>
           <ReactFlow
             nodes={nodes}
@@ -187,6 +196,7 @@ export default function FlowBuilder() {
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
+            deleteKeyCode={["Delete", "Backspace"]}
             fitView
           >
             <MiniMap
