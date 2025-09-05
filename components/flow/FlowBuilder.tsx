@@ -1,0 +1,104 @@
+'use client';
+
+import React, { useCallback, useRef, useState } from 'react';
+import ReactFlow, {
+  ReactFlowProvider,
+  addEdge,
+  Background,
+  Controls,
+  MiniMap,
+  useEdgesState,
+  useNodesState,
+  Connection,
+  Edge,
+  Node,
+  ReactFlowInstance,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import { Sidebar } from './Sidebar';
+import { StartNode } from './nodes/StartNode';
+import { EndNode } from './nodes/EndNode';
+
+const nodeTypes = { start: StartNode, end: EndNode };
+
+export default function FlowBuilder() {
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([]);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      const sourceNode = nodes.find((n) => n.id === params.source);
+      const targetNode = nodes.find((n) => n.id === params.target);
+
+      if (sourceNode?.type === 'start' && edges.some((e) => e.source === sourceNode.id)) {
+        return;
+      }
+
+      if (targetNode?.type === 'end' && edges.some((e) => e.target === targetNode.id)) {
+        return;
+      }
+
+      setEdges((eds) => addEdge(params, eds));
+    },
+    [nodes, edges, setEdges]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+
+      const type = event.dataTransfer.getData('application/reactflow');
+      if (!type || !reactFlowInstance) return;
+
+      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
+      const position = reactFlowInstance.project({
+        x: event.clientX - (reactFlowBounds?.left ?? 0),
+        y: event.clientY - (reactFlowBounds?.top ?? 0),
+      });
+      const id = `${type}-${Date.now()}`;
+
+      const newNode: Node = {
+        id,
+        type,
+        position,
+        data: { label: type === 'start' ? 'Início' : 'Fim' },
+      };
+
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [reactFlowInstance, setNodes]
+  );
+
+  return (
+    <ReactFlowProvider>
+      <div style={{ display: 'flex', height: '100%' }}>
+        <Sidebar />
+        <div style={{ flex: 1, height: '100%' }} ref={reactFlowWrapper}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onInit={setReactFlowInstance}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            nodeTypes={nodeTypes}
+            fitView
+          >
+            <MiniMap style={{ left: 10, bottom: 10 }} />
+            <Controls />
+            <Background />
+          </ReactFlow>
+        </div>
+      </div>
+    </ReactFlowProvider>
+  );
+}
