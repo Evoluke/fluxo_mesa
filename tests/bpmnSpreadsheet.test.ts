@@ -109,24 +109,24 @@ describe('generateApprovalMatrix', () => {
     expect(rows).toHaveLength(18);
 
     const baixoAte50 = rows.find(
-      (row) => row.valorProposta === 'até 50 mil' && row.risco === 'baixo'
+      (row) => row.valorEndividamento === 'até 50 mil' && row.score === 'Baixo'
     );
     expect(baixoAte50).toBeDefined();
-    expect(baixoAte50?.assistenteSede).toBe('x');
+    expect(baixoAte50?.assistenteSRO).toBe('x');
     expect(baixoAte50?.analistaISede).toBe('x');
-    expect(baixoAte50?.outrosUsuarios).toBe('');
+    expect(baixoAte50?.diretorSede).toBe('');
 
     const medioCemCentoeCinquenta = rows.find(
-      (row) => row.valorProposta === '100 a 150 mil' && row.risco === 'médio'
+      (row) => row.valorEndividamento === '100 a 150 mil' && row.score === 'Médio'
     );
-    expect(medioCemCentoeCinquenta?.outrosUsuarios).toBe('x');
+    expect(medioCemCentoeCinquenta?.analistaIISede).toBe('x');
 
     const altoCentoCinquentaDuzentos = rows.find(
-      (row) => row.valorProposta === '150 a 200 mil' && row.risco === 'alto'
+      (row) => row.valorEndividamento === '150 a 200 mil' && row.score === 'Alto'
     );
-    expect(altoCentoCinquentaDuzentos?.assistenteSede).toBe('x');
+    expect(altoCentoCinquentaDuzentos?.assistenteSRO).toBe('x');
     expect(altoCentoCinquentaDuzentos?.analistaISede).toBe('x');
-    expect(altoCentoCinquentaDuzentos?.outrosUsuarios).toBe('x');
+    expect(altoCentoCinquentaDuzentos?.diretorExecutivo).toBe('x');
   });
 
   it('gera conteúdo delimitado com cabeçalho', () => {
@@ -134,7 +134,7 @@ describe('generateApprovalMatrix', () => {
     const content = rowsToDelimitedContent(rows, '/');
     const lines = content.split('\n');
     expect(lines[0]).toBe(
-      'valorEndividamento/valorProposta/RISCO/Assistente Sede/Analista I Sede/Outros usuarios'
+      'Valor de Endividamento/Score/Assistente PA/Consultor PA/Gerente Relacionamento PA/Assistente SRO/Analista I Sede/Analista II Sede/Supervisor Crédito/Coordenador Sede/Gerente Regional/Gerente Sede/Superintendente/Diretor Sede/Diretor Executivo'
     );
     expect(lines[1]).toContain('até 50 mil');
   });
