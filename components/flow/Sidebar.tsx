@@ -15,8 +15,13 @@ import {
   Trash,
   ChevronDown,
   ChevronRight,
+  ImageDown,
 } from 'lucide-react';
-import { generateApprovalMatrix, rowsToDelimitedContent } from '../../utils/bpmnSpreadsheet';
+import {
+  generateApprovalMatrix,
+  rowsToColoredTableImage,
+  rowsToDelimitedContent,
+} from '../../utils/bpmnSpreadsheet';
 
 interface SidebarProps {
   onOrganize: () => void;
@@ -29,6 +34,7 @@ interface SidebarProps {
 export function Sidebar({ onOrganize, onSaveJson, onSaveBpmn, onLoad, onDelete }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bpmnInputRef = useRef<HTMLInputElement>(null);
+  const bpmnImageInputRef = useRef<HTMLInputElement>(null);
   const [toolsOpen, setToolsOpen] = useState(true);
   const [nodesOpen, setNodesOpen] = useState(true);
 
@@ -91,6 +97,37 @@ export function Sidebar({ onOrganize, onSaveJson, onSaveBpmn, onLoad, onDelete }
     bpmnInputRef.current?.click();
   };
 
+  const handleBpmnImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = String(e.target?.result ?? '');
+        const rows = generateApprovalMatrix(text);
+        if (!rows.length) {
+          console.warn('BPMN não possui eventos de início válidos para gerar a imagem.');
+          return;
+        }
+        const dataUrl = rowsToColoredTableImage(rows);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        const baseName = file.name.replace(/\.[^.]+$/, '');
+        link.download = `${baseName || 'fluxo'}-alcadas.png`;
+        link.click();
+      } catch (err) {
+        console.error('Erro ao gerar imagem a partir do arquivo BPMN', err);
+      } finally {
+        event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const triggerBpmnImageSelect = () => {
+    bpmnImageInputRef.current?.click();
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-section">
@@ -120,6 +157,14 @@ export function Sidebar({ onOrganize, onSaveJson, onSaveBpmn, onLoad, onDelete }
               accept=".bpmn,.xml,application/xml,text/xml"
               ref={bpmnInputRef}
               onChange={handleBpmnChange}
+              style={{ display: 'none' }}
+            />
+            <SidebarButton label="Gerar Imagem (BPMN)" icon={ImageDown} onClick={triggerBpmnImageSelect} />
+            <input
+              type="file"
+              accept=".bpmn,.xml,application/xml,text/xml"
+              ref={bpmnImageInputRef}
+              onChange={handleBpmnImageChange}
               style={{ display: 'none' }}
             />
             <SidebarButton label="Deletar Selecionados" icon={Trash} onClick={onDelete} />
