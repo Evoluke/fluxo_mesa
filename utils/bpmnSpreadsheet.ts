@@ -1,5 +1,6 @@
 export interface SpreadsheetRow {
   valorEndividamento: string;
+  valorProposta: string;
   score: string;
   assistentePA: string;
   consultorPA: string;
@@ -65,7 +66,7 @@ const VALUE_RANGES: ValueRange[] = [
 
 const RISK_LEVELS: RiskLevel[] = ['BAIXO', 'MEDIO', 'ALTO'];
 
-type GroupColumnKey = Exclude<keyof SpreadsheetRow, 'valorEndividamento' | 'score'>;
+type GroupColumnKey = Exclude<keyof SpreadsheetRow, 'valorEndividamento' | 'valorProposta' | 'score'>;
 
 export type SequenceGroupIndexMap = Partial<Record<GroupColumnKey, number>>;
 
@@ -135,6 +136,7 @@ GROUP_COLUMN_CONFIG.forEach(({ key, groups }) => {
 
 export const SPREADSHEET_COLUMNS: Array<{ key: keyof SpreadsheetRow; label: string }> = [
   { key: 'valorEndividamento', label: 'Valor de Endividamento' },
+  { key: 'valorProposta', label: 'Valor da Proposta' },
   { key: 'score', label: 'Score' },
   ...GROUP_COLUMN_CONFIG.map(({ key, label }) => ({ key, label })),
 ];
@@ -463,6 +465,7 @@ function groupsToRow(
 
   const row: ApprovalMatrixRow = {
     valorEndividamento: range.label,
+    valorProposta: String(range.representativeValue),
     score: formatScoreLabel(risk),
     assistentePA: '',
     consultorPA: '',

@@ -11,8 +11,8 @@ Uso rápido:
 
 O arquivo de saída seguirá o padrão descrito pelo time de negócios:
 ```
-Valor de Endividamento/Score/Assistente PA/Consultor PA/Gerente Relacionamento PA/Assistente SRO/Analista I Sede/Analista II Sede/Supervisor Crédito/Coordenador Sede/Gerente Regional/Gerente Sede/Superintendente/Diretor Sede/Diretor Executivo
-até 50 mil/Baixo///x/x////////
+Valor de Endividamento/Valor da Proposta/Score/Assistente PA/Consultor PA/Gerente Relacionamento PA/Assistente SRO/Analista I Sede/Analista II Sede/Supervisor Crédito/Coordenador Sede/Gerente Regional/Gerente Sede/Superintendente/Diretor Sede/Diretor Executivo
+até 50 mil/40000/Baixo///x/x////////
 ```
 """
 from __future__ import annotations
@@ -362,6 +362,7 @@ def gerar_planilha(definition: BpmnDefinition) -> List[List[str]]:
             linhas.append(
                 [
                     intervalo_label,
+                    str(int(valor) if float(valor).is_integer() else valor),
                     risco_label,
                     "x" if papeis["Assistente PA"] else "",
                     "x" if papeis["Consultor PA"] else "",
@@ -384,6 +385,7 @@ def gerar_planilha(definition: BpmnDefinition) -> List[List[str]]:
 def escrever_csv_saida(rows: Sequence[Sequence[str]], output_path: Path) -> None:
     header = [
         "Valor de Endividamento",
+        "Valor da Proposta",
         "Score",
         "Assistente PA",
         "Consultor PA",
