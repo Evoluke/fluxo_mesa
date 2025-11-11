@@ -1,0 +1,4 @@
+# Dependências opcionais para desenvolvimento Python
+mypy
+pytest
+ruff
