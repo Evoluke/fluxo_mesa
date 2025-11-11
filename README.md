@@ -13,6 +13,9 @@ Aplicação Next.js da Mesa de Crédito com suporte a um backend Python modular.
   npm test
   npm run lint
   ```
+- Configuração de estilos:
+  - A cadeia de build usa PostCSS com os plugins `@tailwindcss/postcss` e `autoprefixer` declarados em `postcss.config.mjs`.
+  - Ajuste esse arquivo caso precise incluir novos plugins ou customizações ligadas ao Tailwind CSS.
 - Conversão de BPMN para planilha:
   - No construtor de fluxos (página inicial) utilize o botão **Gerar Planilha (BPMN)** na barra lateral.
   - Selecione um arquivo `.bpmn` ou `.xml`. O sistema analisa as condições de risco e faixas de proposta e baixa um arquivo CSV no formato `valorEndividamento/valorProposta/RISCO/Assistente Sede/Analista I Sede/Outros usuarios`.
