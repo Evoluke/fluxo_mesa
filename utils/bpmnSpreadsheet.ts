@@ -1,10 +1,19 @@
 export interface SpreadsheetRow {
   valorEndividamento: string;
-  valorProposta: string;
-  risco: string;
-  assistenteSede: string;
+  score: string;
+  assistentePA: string;
+  consultorPA: string;
+  gerenteRelacionamentoPA: string;
+  assistenteSRO: string;
   analistaISede: string;
-  outrosUsuarios: string;
+  analistaIISede: string;
+  supervisorCredito: string;
+  coordenadorSede: string;
+  gerenteRegional: string;
+  gerenteSede: string;
+  superintendente: string;
+  diretorSede: string;
+  diretorExecutivo: string;
 }
 
 type NodeType = 'startEvent' | 'endEvent' | 'userTask' | 'scriptTask' | 'exclusiveGateway';
@@ -40,12 +49,12 @@ const NODE_TAGS: Record<NodeType, string> = {
 
 type RiskLevel = 'BAIXO' | 'MEDIO' | 'ALTO';
 
-type ProposalRange = {
+type ValueRange = {
   label: string;
   representativeValue: number;
 };
 
-const PROPOSAL_RANGES: ProposalRange[] = [
+const VALUE_RANGES: ValueRange[] = [
   { label: 'até 50 mil', representativeValue: 40000 },
   { label: '50 a 100 mil', representativeValue: 75000 },
   { label: '100 a 150 mil', representativeValue: 125000 },
@@ -56,8 +65,61 @@ const PROPOSAL_RANGES: ProposalRange[] = [
 
 const RISK_LEVELS: RiskLevel[] = ['BAIXO', 'MEDIO', 'ALTO'];
 
-const GROUP_ASSISTENTE = 'assistente.sede';
-const GROUP_ANALISTA_I = 'analista.sede';
+type GroupColumnKey = Exclude<keyof SpreadsheetRow, 'valorEndividamento' | 'score'>;
+
+interface GroupColumn {
+  key: GroupColumnKey;
+  label: string;
+  groups: string[];
+}
+
+const GROUP_COLUMN_CONFIG: GroupColumn[] = [
+  { key: 'assistentePA', label: 'Assistente PA', groups: ['assistente.pa'] },
+  { key: 'consultorPA', label: 'Consultor PA', groups: ['consultor.pa'] },
+  {
+    key: 'gerenteRelacionamentoPA',
+    label: 'Gerente Relacionamento PA',
+    groups: ['gerente_relacionamento.pa', 'gerente.relacionamento.pa'],
+  },
+  {
+    key: 'assistenteSRO',
+    label: 'Assistente SRO',
+    groups: ['assistente.sede', 'assistente.sro'],
+  },
+  { key: 'analistaISede', label: 'Analista I Sede', groups: ['analista.sede'] },
+  {
+    key: 'analistaIISede',
+    label: 'Analista II Sede',
+    groups: ['analistapl.sede', 'analista2.sede', 'analista.ii.sede'],
+  },
+  {
+    key: 'supervisorCredito',
+    label: 'Supervisor Crédito',
+    groups: ['supervisor.credito'],
+  },
+  {
+    key: 'coordenadorSede',
+    label: 'Coordenador Sede',
+    groups: ['coordenador.sede'],
+  },
+  {
+    key: 'gerenteRegional',
+    label: 'Gerente Regional',
+    groups: ['gerente.pa', 'gerente.regional'],
+  },
+  { key: 'gerenteSede', label: 'Gerente Sede', groups: ['gerente.sede'] },
+  {
+    key: 'superintendente',
+    label: 'Superintendente',
+    groups: ['superintendente', 'superintendente.sede'],
+  },
+  { key: 'diretorSede', label: 'Diretor Sede', groups: ['diretor.sede'] },
+  {
+    key: 'diretorExecutivo',
+    label: 'Diretor Executivo',
+    groups: ['executivo.sede', 'diretor.executivo'],
+  },
+];
 
 const attributeRegex = /([\w:-]+)="([^"]*)"/g;
 
@@ -268,35 +330,44 @@ function buildContext(valorProposta: number, risco: RiskLevel): Record<string, u
   };
 }
 
-function formatRiskLabel(risk: RiskLevel): string {
+function formatScoreLabel(risk: RiskLevel): string {
   switch (risk) {
     case 'BAIXO':
-      return 'baixo';
+      return 'Baixo';
     case 'MEDIO':
-      return 'médio';
+      return 'Médio';
     case 'ALTO':
     default:
-      return 'alto';
+      return 'Alto';
   }
 }
 
-function groupsToRow(groups: Set<string>, range: ProposalRange, risk: RiskLevel): SpreadsheetRow {
-  const assistente = groups.has(GROUP_ASSISTENTE) ? 'x' : '';
-  const analista = groups.has(GROUP_ANALISTA_I) ? 'x' : '';
-  const outros = Array.from(groups).some(
-    (group) => group !== GROUP_ASSISTENTE && group !== GROUP_ANALISTA_I
-  )
-    ? 'x'
-    : '';
-
-  return {
-    valorEndividamento: '-',
-    valorProposta: range.label,
-    risco: formatRiskLabel(risk),
-    assistenteSede: assistente,
-    analistaISede: analista,
-    outrosUsuarios: outros,
+function groupsToRow(groups: Set<string>, range: ValueRange, risk: RiskLevel): SpreadsheetRow {
+  const row: SpreadsheetRow = {
+    valorEndividamento: range.label,
+    score: formatScoreLabel(risk),
+    assistentePA: '',
+    consultorPA: '',
+    gerenteRelacionamentoPA: '',
+    assistenteSRO: '',
+    analistaISede: '',
+    analistaIISede: '',
+    supervisorCredito: '',
+    coordenadorSede: '',
+    gerenteRegional: '',
+    gerenteSede: '',
+    superintendente: '',
+    diretorSede: '',
+    diretorExecutivo: '',
   };
+
+  GROUP_COLUMN_CONFIG.forEach(({ key, groups: columnGroups }) => {
+    if (columnGroups.some((group) => groups.has(group))) {
+      row[key] = 'x';
+    }
+  });
+
+  return row;
 }
 
 export function generateApprovalMatrix(xml: string): SpreadsheetRow[] {
@@ -306,7 +377,7 @@ export function generateApprovalMatrix(xml: string): SpreadsheetRow[] {
   }
 
   const rows: SpreadsheetRow[] = [];
-  PROPOSAL_RANGES.forEach((range) => {
+  VALUE_RANGES.forEach((range) => {
     RISK_LEVELS.forEach((risk) => {
       const context = buildContext(range.representativeValue, risk);
       const groups = new Set<string>();
@@ -320,20 +391,14 @@ export function generateApprovalMatrix(xml: string): SpreadsheetRow[] {
 
 export function rowsToDelimitedContent(rows: SpreadsheetRow[], separator = '/'): string {
   const header = [
-    'valorEndividamento',
-    'valorProposta',
-    'RISCO',
-    'Assistente Sede',
-    'Analista I Sede',
-    'Outros usuarios',
+    'Valor de Endividamento',
+    'Score',
+    ...GROUP_COLUMN_CONFIG.map((column) => column.label),
   ];
   const lines = rows.map((row) => [
     row.valorEndividamento,
-    row.valorProposta,
-    row.risco,
-    row.assistenteSede,
-    row.analistaISede,
-    row.outrosUsuarios,
+    row.score,
+    ...GROUP_COLUMN_CONFIG.map((column) => row[column.key]),
   ]);
   return [header.join(separator), ...lines.map((line) => line.join(separator))].join('\n');
 }

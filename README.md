@@ -18,7 +18,7 @@ Aplicação Next.js da Mesa de Crédito com suporte a um backend Python modular.
   - Ajuste esse arquivo caso precise incluir novos plugins ou customizações ligadas ao Tailwind CSS.
 - Conversão de BPMN para planilha:
   - No construtor de fluxos (página inicial) utilize o botão **Gerar Planilha (BPMN)** na barra lateral.
-  - Selecione um arquivo `.bpmn` ou `.xml`. O sistema analisa as condições de risco e faixas de proposta e baixa um arquivo CSV no formato `valorEndividamento/valorProposta/RISCO/Assistente Sede/Analista I Sede/Outros usuarios`.
+  - Selecione um arquivo `.bpmn` ou `.xml`. O sistema analisa as condições de risco e faixas de proposta e baixa um arquivo CSV no formato `Valor de Endividamento/Score/Assistente PA/Consultor PA/Gerente Relacionamento PA/Assistente SRO/Analista I Sede/Analista II Sede/Supervisor Crédito/Coordenador Sede/Gerente Regional/Gerente Sede/Superintendente/Diretor Sede/Diretor Executivo`.
   - O arquivo considera as combinações de risco (baixo, médio e alto) e as faixas configuradas no script BPMN para apontar quais grupos participam das aprovações.
 
 ## Backend Python

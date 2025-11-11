@@ -11,8 +11,8 @@ Uso rápido:
 
 O arquivo de saída seguirá o padrão descrito pelo time de negócios:
 ```
-valorEndividamento/valorProposta/RISCO/Assistente Sede/Analista I Sede/Outros usuarios
--/até 50 mil/baixo//x/
+Valor de Endividamento/Score/Assistente PA/Consultor PA/Gerente Relacionamento PA/Assistente SRO/Analista I Sede/Analista II Sede/Supervisor Crédito/Coordenador Sede/Gerente Regional/Gerente Sede/Superintendente/Diretor Sede/Diretor Executivo
+até 50 mil/Baixo///x/x////////
 ```
 """
 from __future__ import annotations
@@ -288,19 +288,53 @@ def simulate_case(definition: BpmnDefinition, valor_proposta: float, risco: str,
     return visited_tasks
 
 
-def classificar_por_coluna(task_ids: Iterable[str]) -> Dict[str, bool]:
+def classificar_por_coluna(
+    task_ids: Iterable[str], definition: BpmnDefinition
+) -> Dict[str, bool]:
     papeis = {
-        "Assistente Sede": False,
+        "Assistente PA": False,
+        "Consultor PA": False,
+        "Gerente Relacionamento PA": False,
+        "Assistente SRO": False,
         "Analista I Sede": False,
-        "Outros usuarios": False,
+        "Analista II Sede": False,
+        "Supervisor Crédito": False,
+        "Coordenador Sede": False,
+        "Gerente Regional": False,
+        "Gerente Sede": False,
+        "Superintendente": False,
+        "Diretor Sede": False,
+        "Diretor Executivo": False,
     }
+
+    task_groups = {
+        "Assistente PA": {"assistente.pa"},
+        "Consultor PA": {"consultor.pa"},
+        "Gerente Relacionamento PA": {
+            "gerente_relacionamento.pa",
+            "gerente.relacionamento.pa",
+        },
+        "Assistente SRO": {"assistente.sede", "assistente.sro"},
+        "Analista I Sede": {"analista.sede"},
+        "Analista II Sede": {"analistapl.sede", "analista2.sede", "analista.ii.sede"},
+        "Supervisor Crédito": {"supervisor.credito"},
+        "Coordenador Sede": {"coordenador.sede"},
+        "Gerente Regional": {"gerente.pa", "gerente.regional"},
+        "Gerente Sede": {"gerente.sede"},
+        "Superintendente": {"superintendente", "superintendente.sede"},
+        "Diretor Sede": {"diretor.sede"},
+        "Diretor Executivo": {"executivo.sede", "diretor.executivo"},
+    }
+
     for task_id in task_ids:
-        if task_id == "usertask7":
-            papeis["Assistente Sede"] = True
-        if task_id in {"usertask1", "usertask8"}:
-            papeis["Analista I Sede"] = True
-        if task_id in {"usertask2", "usertask3", "usertask4", "usertask5"}:
-            papeis["Outros usuarios"] = True
+        task = definition.nodes.get(task_id)
+        if task and task.candidate_groups:
+            grupos_tarefa = set(task.candidate_groups.split(","))
+            grupos_tarefa = {grupo.strip() for grupo in grupos_tarefa if grupo.strip()}
+            for coluna, grupos in task_groups.items():
+                if grupos & grupos_tarefa:
+                    papeis[coluna] = True
+
     return papeis
 
 
@@ -314,9 +348,9 @@ def gerar_planilha(definition: BpmnDefinition) -> List[List[str]]:
         ("acima de 300 mil", 350_000),
     ]
     riscos: List[Tuple[str, str]] = [
-        ("baixo", "BAIXO"),
-        ("alto", "ALTO"),
-        ("outros", "OUTRO"),
+        ("Baixo", "BAIXO"),
+        ("Médio", "MEDIO"),
+        ("Alto", "ALTO"),
     ]
 
     linhas: List[List[str]] = []
@@ -324,15 +358,24 @@ def gerar_planilha(definition: BpmnDefinition) -> List[List[str]]:
     for risco_label, risco_valor in riscos:
         for intervalo_label, valor in intervalos:
             tasks = simulate_case(definition, valor, risco_valor, aprovado=True)
-            papeis = classificar_por_coluna(tasks)
+            papeis = classificar_por_coluna(tasks, definition)
             linhas.append(
                 [
-                    "-",
                     intervalo_label,
                     risco_label,
-                    "x" if papeis["Assistente Sede"] else "",
+                    "x" if papeis["Assistente PA"] else "",
+                    "x" if papeis["Consultor PA"] else "",
+                    "x" if papeis["Gerente Relacionamento PA"] else "",
+                    "x" if papeis["Assistente SRO"] else "",
                     "x" if papeis["Analista I Sede"] else "",
-                    "x" if papeis["Outros usuarios"] else "",
+                    "x" if papeis["Analista II Sede"] else "",
+                    "x" if papeis["Supervisor Crédito"] else "",
+                    "x" if papeis["Coordenador Sede"] else "",
+                    "x" if papeis["Gerente Regional"] else "",
+                    "x" if papeis["Gerente Sede"] else "",
+                    "x" if papeis["Superintendente"] else "",
+                    "x" if papeis["Diretor Sede"] else "",
+                    "x" if papeis["Diretor Executivo"] else "",
                 ]
             )
     return linhas
@@ -340,12 +383,21 @@ def gerar_planilha(definition: BpmnDefinition) -> List[List[str]]:
 
 def escrever_csv_saida(rows: Sequence[Sequence[str]], output_path: Path) -> None:
     header = [
-        "valorEndividamento",
-        "valorProposta",
-        "RISCO",
-        "Assistente Sede",
+        "Valor de Endividamento",
+        "Score",
+        "Assistente PA",
+        "Consultor PA",
+        "Gerente Relacionamento PA",
+        "Assistente SRO",
         "Analista I Sede",
-        "Outros usuarios",
+        "Analista II Sede",
+        "Supervisor Crédito",
+        "Coordenador Sede",
+        "Gerente Regional",
+        "Gerente Sede",
+        "Superintendente",
+        "Diretor Sede",
+        "Diretor Executivo",
     ]
     with output_path.open("w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile, delimiter="/")
