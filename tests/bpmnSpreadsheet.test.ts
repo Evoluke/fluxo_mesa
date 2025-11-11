@@ -277,6 +277,7 @@ describe('generateApprovalMatrix', () => {
       (row) => row.valorEndividamento === 'até 50 mil' && row.score === 'Baixo'
     );
     expect(baixoAte50).toBeDefined();
+    expect(baixoAte50?.valorProposta).toBe('40000');
     expect(baixoAte50?.assistenteSRO).toBe('x');
     expect(baixoAte50?.analistaISede).toBe('x');
     expect(baixoAte50?.sequenceGroupByColumn.assistenteSRO).toBe(
@@ -317,9 +318,10 @@ describe('generateApprovalMatrix', () => {
     const content = rowsToDelimitedContent(rows);
     const lines = content.split('\n');
     expect(lines[0]).toBe(
-      'Valor de Endividamento,Score,Assistente PA,Consultor PA,Gerente Relacionamento PA,Assistente SRO,Analista I Sede,Analista II Sede,Supervisor Crédito,Coordenador Sede,Gerente Regional,Gerente Sede,Superintendente,Diretor Sede,Diretor Executivo'
+      'Valor de Endividamento,Valor da Proposta,Score,Assistente PA,Consultor PA,Gerente Relacionamento PA,Assistente SRO,Analista I Sede,Analista II Sede,Supervisor Crédito,Coordenador Sede,Gerente Regional,Gerente Sede,Superintendente,Diretor Sede,Diretor Executivo'
     );
     expect(lines[1]).toContain('até 50 mil');
+    expect(lines[1]).toContain('40000');
     expect(content).not.toContain('*');
   });
 

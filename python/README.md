@@ -31,6 +31,9 @@ Após instalar as dependências, os comandos abaixo ficam disponíveis:
 ## Conversão de BPMN em planilhas
 - `PYTHONPATH=src python -m bpmn_to_planilha <arquivo.bpmn> <saida.csv>`: gera a
   planilha de alçadas com base em um processo BPMN compatível com Activiti.
+  O cabeçalho segue o padrão
+  `Valor de Endividamento/Valor da Proposta/Score/Assistente PA/...` e inclui a
+  coluna de valor representativo da proposta.
 
 Um exemplo completo do fluxo **FluxoCiviaCartaoCreditoLimiteCredito** está em
 `python/examples/`. Execute o comando abaixo (com o ambiente virtual ativado) para
