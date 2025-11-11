@@ -85,7 +85,7 @@ export const GROUP_COLUMN_CONFIG: GroupColumn[] = [
   {
     key: 'gerenteRelacionamentoPA',
     label: 'Gerente Relacionamento PA',
-    groups: ['gerente_relacionamento.pa', 'gerente.relacionamento.pa'],
+    groups: ['gerente_relacionamento.pa', 'gerente.relacionamento.pa', 'coordenador.pa'],
   },
   {
     key: 'assistenteSRO',
@@ -356,20 +356,79 @@ function traverse(
   });
 }
 
-function buildContext(valorProposta: number, risco: RiskLevel): Record<string, unknown> {
+function buildContext(representativeValue: number, risco: RiskLevel): Record<string, unknown> {
+  const valorEndividamento = representativeValue;
+  const valorProposta = representativeValue;
+
+  const ehFaixaEndividamentoZero_CinquentaMil =
+    valorEndividamento > 0 && valorEndividamento <= 50000;
+  const ehFaixaEndividamentoCinquentaMil_CemMil =
+    valorEndividamento > 50000 && valorEndividamento <= 100000;
+  const ehFaixaEndividamentoCemMil_CentoECinquentaMil =
+    valorEndividamento > 100000 && valorEndividamento <= 150000;
+  const ehFaixaEndividamentoCentoECinquentaMil_DuzentosMil =
+    valorEndividamento > 150000 && valorEndividamento <= 200000;
+  const ehFaixaEndividamentoDuzentosMil_DuzentosECinquentaMil =
+    valorEndividamento > 200000 && valorEndividamento <= 250000;
+  const ehFaixaEndividamentoDuzentosECinquentaMil_TrezentosMil =
+    valorEndividamento > 250000 && valorEndividamento <= 300000;
+  const ehFaixaEndividamentoMaiorQueTrezentosMil = valorEndividamento > 300000;
+
+  const ehFaixaPropostaZero_CinquentaMil = valorProposta <= 50000;
+  const ehFaixaPropostaCinquentaMil_CemMil =
+    valorProposta > 50000 && valorProposta <= 100000;
+  const ehFaixaPropostaCemMil_CentoECinquentaMil =
+    valorProposta > 100000 && valorProposta <= 150000;
+  const ehFaixaPropostaCentoECinquentaMil_DuzentosMil =
+    valorProposta > 150000 && valorProposta <= 200000;
+  const ehFaixaPropostaDuzentosMil_TrezentosMil =
+    valorProposta > 200000 && valorProposta <= 300000;
+  const ehFaixaPropostaMaiorQueTrezentosMil = valorProposta > 300000;
+  const ehFaixaPropostaCinquentaMil_CentoECinquentaMil =
+    valorProposta > 50000 && valorProposta <= 150000;
+  const ehFaixaPropostaCentoECinquentaMil_DuzentosECinquentaMil =
+    valorProposta > 150000 && valorProposta <= 250000;
+  const ehFaixaPropostaCentoECinquentaMil_TrezentosMil =
+    valorProposta > 150000 && valorProposta <= 300000;
+  const ehFaixaPropostaCinquentaMil_DuzentosMil =
+    valorProposta > 50000 && valorProposta <= 200000;
+  const ehFaixaPropostaCinquentaMil_TrezentosMil =
+    valorProposta > 50000 && valorProposta <= 300000;
+  const ehFaixaPropostaZero_DuzentosECinquentaMil = valorProposta <= 250000;
+  const ehFaixaPropostaZero_TrezentosMil = valorProposta <= 300000;
+
   return {
+    valorEndividamento,
     valorProposta,
     risco,
     aprovado: true,
     naoTemRiscoBaixo: risco !== 'BAIXO',
     temRiscoBaixo: risco === 'BAIXO',
     temRiscoAlto: risco === 'ALTO',
+    temScoreAlto: risco === 'ALTO',
+    naoTemScoreAlto: risco !== 'ALTO',
+    naoTemScoreBaixo: risco !== 'BAIXO',
     ehFaixaPropostaAteCinquentaMil: valorProposta <= 50000,
-    ehFaixaPropostaCinquentaMil_CemMil: valorProposta > 50000 && valorProposta <= 100000,
-    ehFaixaPropostaCemMil_CentoECinquentaMil: valorProposta > 100000 && valorProposta <= 150000,
-    ehFaixaPropostaCentoECinquentaMil_DuzentosMil: valorProposta > 150000 && valorProposta <= 200000,
-    ehFaixaPropostaDuzentosMil_TrezentosMil: valorProposta > 200000 && valorProposta <= 300000,
-    ehFaixaPropostaMaiorQueTrezentosMil: valorProposta > 300000,
+    ehFaixaPropostaCinquentaMil_CemMil,
+    ehFaixaPropostaCemMil_CentoECinquentaMil,
+    ehFaixaPropostaCentoECinquentaMil_DuzentosMil,
+    ehFaixaPropostaDuzentosMil_TrezentosMil,
+    ehFaixaPropostaMaiorQueTrezentosMil,
+    ehFaixaPropostaCinquentaMil_CentoECinquentaMil,
+    ehFaixaPropostaCentoECinquentaMil_DuzentosECinquentaMil,
+    ehFaixaPropostaCentoECinquentaMil_TrezentosMil,
+    ehFaixaPropostaCinquentaMil_DuzentosMil,
+    ehFaixaPropostaCinquentaMil_TrezentosMil,
+    ehFaixaPropostaZero_CinquentaMil,
+    ehFaixaPropostaZero_DuzentosECinquentaMil,
+    ehFaixaPropostaZero_TrezentosMil,
+    ehFaixaEndividamentoZero_CinquentaMil,
+    ehFaixaEndividamentoCinquentaMil_CemMil,
+    ehFaixaEndividamentoCemMil_CentoECinquentaMil,
+    ehFaixaEndividamentoCentoECinquentaMil_DuzentosMil,
+    ehFaixaEndividamentoDuzentosMil_DuzentosECinquentaMil,
+    ehFaixaEndividamentoDuzentosECinquentaMil_TrezentosMil,
+    ehFaixaEndividamentoMaiorQueTrezentosMil,
   };
 }
 
