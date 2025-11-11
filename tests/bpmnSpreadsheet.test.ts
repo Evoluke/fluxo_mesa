@@ -112,29 +112,29 @@ describe('generateApprovalMatrix', () => {
       (row) => row.valorEndividamento === 'até 50 mil' && row.score === 'Baixo'
     );
     expect(baixoAte50).toBeDefined();
-    expect(baixoAte50?.assistenteSRO).toBe('x');
-    expect(baixoAte50?.analistaISede).toBe('x');
+    expect(baixoAte50?.assistenteSRO).toBe('x*');
+    expect(baixoAte50?.analistaISede).toBe('x*');
     expect(baixoAte50?.diretorSede).toBe('');
 
     const medioCemCentoeCinquenta = rows.find(
       (row) => row.valorEndividamento === '100 a 150 mil' && row.score === 'Médio'
     );
-    expect(medioCemCentoeCinquenta?.analistaIISede).toBe('x');
+    expect(medioCemCentoeCinquenta?.analistaIISede).toBe('x*');
 
     const altoCentoCinquentaDuzentos = rows.find(
       (row) => row.valorEndividamento === '150 a 200 mil' && row.score === 'Alto'
     );
-    expect(altoCentoCinquentaDuzentos?.assistenteSRO).toBe('x');
-    expect(altoCentoCinquentaDuzentos?.analistaISede).toBe('x');
-    expect(altoCentoCinquentaDuzentos?.diretorExecutivo).toBe('x');
+    expect(altoCentoCinquentaDuzentos?.assistenteSRO).toBe('x*');
+    expect(altoCentoCinquentaDuzentos?.analistaISede).toBe('x*');
+    expect(altoCentoCinquentaDuzentos?.diretorExecutivo).toBe('x*');
   });
 
   it('gera conteúdo delimitado com cabeçalho', () => {
     const rows = generateApprovalMatrix(SAMPLE_BPMN);
-    const content = rowsToDelimitedContent(rows, '/');
+    const content = rowsToDelimitedContent(rows);
     const lines = content.split('\n');
     expect(lines[0]).toBe(
-      'Valor de Endividamento/Score/Assistente PA/Consultor PA/Gerente Relacionamento PA/Assistente SRO/Analista I Sede/Analista II Sede/Supervisor Crédito/Coordenador Sede/Gerente Regional/Gerente Sede/Superintendente/Diretor Sede/Diretor Executivo'
+      'Valor de Endividamento,Score,Assistente PA,Consultor PA,Gerente Relacionamento PA,Assistente SRO,Analista I Sede,Analista II Sede,Supervisor Crédito,Coordenador Sede,Gerente Regional,Gerente Sede,Superintendente,Diretor Sede,Diretor Executivo'
     );
     expect(lines[1]).toContain('até 50 mil');
   });
