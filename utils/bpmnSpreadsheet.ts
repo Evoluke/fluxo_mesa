@@ -121,6 +121,12 @@ const GROUP_COLUMN_CONFIG: GroupColumn[] = [
   },
 ];
 
+const GROUP_LOOKUP = new Map<string, GroupColumnKey>();
+
+GROUP_COLUMN_CONFIG.forEach(({ key, groups }) => {
+  groups.forEach((group) => GROUP_LOOKUP.set(group, key));
+});
+
 const attributeRegex = /([\w:-]+)="([^"]*)"/g;
 
 function parseAttributes(fragment: string): Record<string, string> {
@@ -275,7 +281,8 @@ function traverse(
   nodeId: string | undefined,
   context: Record<string, unknown>,
   visited: Set<string>,
-  groups: Set<string>
+  groups: Set<string>,
+  groupedColumns: Set<GroupColumnKey>
 ): void {
   if (!nodeId || visited.has(nodeId)) {
     return;
@@ -289,7 +296,17 @@ function traverse(
   nextVisited.add(nodeId);
 
   if (node.type === 'userTask' && node.candidateGroups) {
-    node.candidateGroups.forEach((group) => groups.add(group));
+    const columnKeys = new Set<GroupColumnKey>();
+    node.candidateGroups.forEach((group) => {
+      groups.add(group);
+      const columnKey = GROUP_LOOKUP.get(group);
+      if (columnKey) {
+        columnKeys.add(columnKey);
+      }
+    });
+    if (columnKeys.size > 1) {
+      columnKeys.forEach((key) => groupedColumns.add(key));
+    }
   }
 
   const outgoing = process.flowsBySource[nodeId] ?? [];
@@ -309,7 +326,7 @@ function traverse(
   }
 
   matched.forEach((flow) => {
-    traverse(process, flow.targetRef, context, nextVisited, groups);
+    traverse(process, flow.targetRef, context, nextVisited, groups, groupedColumns);
   });
 }
 
@@ -342,7 +359,12 @@ function formatScoreLabel(risk: RiskLevel): string {
   }
 }
 
-function groupsToRow(groups: Set<string>, range: ValueRange, risk: RiskLevel): SpreadsheetRow {
+function groupsToRow(
+  groups: Set<string>,
+  groupedColumns: Set<GroupColumnKey>,
+  range: ValueRange,
+  risk: RiskLevel
+): SpreadsheetRow {
   const row: SpreadsheetRow = {
     valorEndividamento: range.label,
     score: formatScoreLabel(risk),
@@ -363,7 +385,7 @@ function groupsToRow(groups: Set<string>, range: ValueRange, risk: RiskLevel): S
 
   GROUP_COLUMN_CONFIG.forEach(({ key, groups: columnGroups }) => {
     if (columnGroups.some((group) => groups.has(group))) {
-      row[key] = 'x';
+      row[key] = groupedColumns.has(key) ? 'x*' : 'x';
     }
   });
 
@@ -381,15 +403,23 @@ export function generateApprovalMatrix(xml: string): SpreadsheetRow[] {
     RISK_LEVELS.forEach((risk) => {
       const context = buildContext(range.representativeValue, risk);
       const groups = new Set<string>();
-      traverse(process, process.startEventId ?? undefined, context, new Set<string>(), groups);
-      rows.push(groupsToRow(groups, range, risk));
+      const groupedColumns = new Set<GroupColumnKey>();
+      traverse(
+        process,
+        process.startEventId ?? undefined,
+        context,
+        new Set<string>(),
+        groups,
+        groupedColumns
+      );
+      rows.push(groupsToRow(groups, groupedColumns, range, risk));
     });
   });
 
   return rows;
 }
 
-export function rowsToDelimitedContent(rows: SpreadsheetRow[], separator = '/'): string {
+export function rowsToDelimitedContent(rows: SpreadsheetRow[], separator = ','): string {
   const header = [
     'Valor de Endividamento',
     'Score',
