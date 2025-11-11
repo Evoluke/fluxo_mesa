@@ -67,6 +67,12 @@ const RISK_LEVELS: RiskLevel[] = ['BAIXO', 'MEDIO', 'ALTO'];
 
 type GroupColumnKey = Exclude<keyof SpreadsheetRow, 'valorEndividamento' | 'score'>;
 
+export type SequenceGroupIndexMap = Partial<Record<GroupColumnKey, number>>;
+
+export interface ApprovalMatrixRow extends SpreadsheetRow {
+  sequenceGroupByColumn: SequenceGroupIndexMap;
+}
+
 interface GroupColumn {
   key: GroupColumnKey;
   label: string;
@@ -288,7 +294,8 @@ function traverse(
   context: Record<string, unknown>,
   visited: Set<string>,
   groups: Set<string>,
-  groupedColumns: Set<GroupColumnKey>
+  sequenceGroups: GroupColumnKey[][],
+  sequenceGroupSignatures: Set<string>
 ): void {
   if (!nodeId || visited.has(nodeId)) {
     return;
@@ -311,7 +318,12 @@ function traverse(
       }
     });
     if (columnKeys.size > 1) {
-      columnKeys.forEach((key) => groupedColumns.add(key));
+      const sortedKeys = Array.from(columnKeys).sort();
+      const signature = sortedKeys.join('|');
+      if (!sequenceGroupSignatures.has(signature)) {
+        sequenceGroupSignatures.add(signature);
+        sequenceGroups.push(sortedKeys);
+      }
     }
   }
 
@@ -332,7 +344,15 @@ function traverse(
   }
 
   matched.forEach((flow) => {
-    traverse(process, flow.targetRef, context, nextVisited, groups, groupedColumns);
+    traverse(
+      process,
+      flow.targetRef,
+      context,
+      nextVisited,
+      groups,
+      sequenceGroups,
+      sequenceGroupSignatures
+    );
   });
 }
 
@@ -367,11 +387,22 @@ function formatScoreLabel(risk: RiskLevel): string {
 
 function groupsToRow(
   groups: Set<string>,
-  groupedColumns: Set<GroupColumnKey>,
+  sequenceGroups: GroupColumnKey[][],
   range: ValueRange,
   risk: RiskLevel
-): SpreadsheetRow {
-  const row: SpreadsheetRow = {
+): ApprovalMatrixRow {
+  const sequenceGroupByColumn: SequenceGroupIndexMap = {};
+
+  sequenceGroups.forEach((keys, index) => {
+    if (keys.length < 2) {
+      return;
+    }
+    keys.forEach((key) => {
+      sequenceGroupByColumn[key] = index;
+    });
+  });
+
+  const row: ApprovalMatrixRow = {
     valorEndividamento: range.label,
     score: formatScoreLabel(risk),
     assistentePA: '',
@@ -387,38 +418,41 @@ function groupsToRow(
     superintendente: '',
     diretorSede: '',
     diretorExecutivo: '',
+    sequenceGroupByColumn,
   };
 
   GROUP_COLUMN_CONFIG.forEach(({ key, groups: columnGroups }) => {
     if (columnGroups.some((group) => groups.has(group))) {
-      row[key] = groupedColumns.has(key) ? 'x*' : 'x';
+      row[key] = 'x';
     }
   });
 
   return row;
 }
 
-export function generateApprovalMatrix(xml: string): SpreadsheetRow[] {
+export function generateApprovalMatrix(xml: string): ApprovalMatrixRow[] {
   const process = buildProcess(xml);
   if (!process.startEventId) {
     return [];
   }
 
-  const rows: SpreadsheetRow[] = [];
+  const rows: ApprovalMatrixRow[] = [];
   VALUE_RANGES.forEach((range) => {
     RISK_LEVELS.forEach((risk) => {
       const context = buildContext(range.representativeValue, risk);
       const groups = new Set<string>();
-      const groupedColumns = new Set<GroupColumnKey>();
+      const sequenceGroups: GroupColumnKey[][] = [];
+      const sequenceGroupSignatures = new Set<string>();
       traverse(
         process,
         process.startEventId ?? undefined,
         context,
         new Set<string>(),
         groups,
-        groupedColumns
+        sequenceGroups,
+        sequenceGroupSignatures
       );
-      rows.push(groupsToRow(groups, groupedColumns, range, risk));
+      rows.push(groupsToRow(groups, sequenceGroups, range, risk));
     });
   });
 
@@ -441,8 +475,8 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export function rowsToColoredTableImage(
-  rows: SpreadsheetRow[],
-  options?: { columnColors?: string[] }
+  rows: ApprovalMatrixRow[],
+  options?: { columnColors?: string[]; sequenceColors?: string[] }
 ): string {
   if (typeof document === 'undefined') {
     throw new Error('Geração de imagem disponível apenas no ambiente do navegador.');
@@ -485,7 +519,7 @@ export function rowsToColoredTableImage(
   context.textBaseline = 'middle';
   context.textAlign = 'left';
 
-  const defaultColumnColors = [
+  const defaultSequenceColors = [
     '#fde68a',
     '#bbf7d0',
     '#bfdbfe',
@@ -503,16 +537,16 @@ export function rowsToColoredTableImage(
     '#f5d0fe',
   ];
 
-  const palette = options?.columnColors?.length
+  const palette = options?.sequenceColors?.length
+    ? options.sequenceColors
+    : options?.columnColors?.length
     ? options.columnColors
-    : defaultColumnColors;
+    : defaultSequenceColors;
 
   let offsetX = 0;
   columns.forEach((column, columnIndex) => {
     const columnWidth = columnWidths[columnIndex];
-    const baseColor = palette[columnIndex % palette.length];
-
-    context.fillStyle = baseColor;
+    context.fillStyle = '#e5e7eb';
     context.fillRect(offsetX, 0, columnWidth, headerHeight);
 
     context.font = headerFont;
@@ -522,10 +556,24 @@ export function rowsToColoredTableImage(
     rows.forEach((row, rowIndex) => {
       const y = headerHeight + rowIndex * rowHeight;
       const value = String(row[column.key] ?? '');
-      context.fillStyle = hexToRgba(baseColor, 0.18);
+      const zebraFill = rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb';
+      let cellFill = zebraFill;
+      let textColor = '#1f2937';
+
+      if (column.key !== 'valorEndividamento' && column.key !== 'score') {
+        const key = column.key as GroupColumnKey;
+        const sequenceIndex = row.sequenceGroupByColumn[key];
+        if (typeof sequenceIndex === 'number' && value) {
+          const sequenceColor = palette[sequenceIndex % palette.length];
+          cellFill = hexToRgba(sequenceColor, 0.45);
+          textColor = '#111827';
+        }
+      }
+
+      context.fillStyle = cellFill;
       context.fillRect(offsetX, y, columnWidth, rowHeight);
       context.font = cellFont;
-      context.fillStyle = '#1f2937';
+      context.fillStyle = textColor;
       context.fillText(value, offsetX + cellPadding, y + rowHeight / 2);
     });
 
