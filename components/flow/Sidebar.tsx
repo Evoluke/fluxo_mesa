@@ -7,6 +7,7 @@ import {
   Save,
   FileCode,
   Upload,
+  Table,
   Play,
   GitBranch,
   Shield,
@@ -15,6 +16,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
+import { generateApprovalMatrix, rowsToDelimitedContent } from '../../utils/bpmnSpreadsheet';
 
 interface SidebarProps {
   onOrganize: () => void;
@@ -26,6 +28,7 @@ interface SidebarProps {
 
 export function Sidebar({ onOrganize, onSaveJson, onSaveBpmn, onLoad, onDelete }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bpmnInputRef = useRef<HTMLInputElement>(null);
   const [toolsOpen, setToolsOpen] = useState(true);
   const [nodesOpen, setNodesOpen] = useState(true);
 
@@ -54,6 +57,40 @@ export function Sidebar({ onOrganize, onSaveJson, onSaveBpmn, onLoad, onDelete }
     fileInputRef.current?.click();
   };
 
+  const handleBpmnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = String(e.target?.result ?? '');
+        const rows = generateApprovalMatrix(text);
+        if (!rows.length) {
+          console.warn('BPMN não possui eventos de início válidos para gerar a planilha.');
+          return;
+        }
+        const content = rowsToDelimitedContent(rows);
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const baseName = file.name.replace(/\.[^.]+$/, '');
+        a.download = `${baseName || 'fluxo'}-alcadas.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Erro ao gerar planilha a partir do arquivo BPMN', err);
+      } finally {
+        event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const triggerBpmnSelect = () => {
+    bpmnInputRef.current?.click();
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-section">
@@ -75,6 +112,14 @@ export function Sidebar({ onOrganize, onSaveJson, onSaveBpmn, onLoad, onDelete }
               accept="application/json"
               ref={fileInputRef}
               onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+            <SidebarButton label="Gerar Planilha (BPMN)" icon={Table} onClick={triggerBpmnSelect} />
+            <input
+              type="file"
+              accept=".bpmn,.xml,application/xml,text/xml"
+              ref={bpmnInputRef}
+              onChange={handleBpmnChange}
               style={{ display: 'none' }}
             />
             <SidebarButton label="Deletar Selecionados" icon={Trash} onClick={onDelete} />

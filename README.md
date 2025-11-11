@@ -13,6 +13,10 @@ Aplicação Next.js da Mesa de Crédito com suporte a um backend Python modular.
   npm test
   npm run lint
   ```
+- Conversão de BPMN para planilha:
+  - No construtor de fluxos (página inicial) utilize o botão **Gerar Planilha (BPMN)** na barra lateral.
+  - Selecione um arquivo `.bpmn` ou `.xml`. O sistema analisa as condições de risco e faixas de proposta e baixa um arquivo CSV no formato `valorEndividamento/valorProposta/RISCO/Assistente Sede/Analista I Sede/Outros usuarios`.
+  - O arquivo considera as combinações de risco (baixo, médio e alto) e as faixas configuradas no script BPMN para apontar quais grupos participam das aprovações.
 
 ## Backend Python
 A estrutura inicial do backend está no diretório [`python/`](python/README.md). Lá você encontra instruções para criar o ambiente virtual, instalar dependências e iniciar novos serviços.
