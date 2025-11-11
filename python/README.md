@@ -28,6 +28,24 @@ Após instalar as dependências, os comandos abaixo ficam disponíveis:
 - `ruff check src`: análise estática com Ruff.
 - `mypy src`: verificação de tipos estáticos.
 
+## Conversão de BPMN em planilhas
+- `PYTHONPATH=src python -m bpmn_to_planilha <arquivo.bpmn> <saida.csv>`: gera a
+  planilha de alçadas com base em um processo BPMN compatível com Activiti.
+
+Um exemplo completo do fluxo **FluxoCiviaCartaoCreditoLimiteCredito** está em
+`python/examples/`. Execute o comando abaixo (com o ambiente virtual ativado) para
+gerar a planilha de referência:
+
+```bash
+cd python
+PYTHONPATH=src python -m bpmn_to_planilha \
+  examples/FluxoCiviaCartaoCreditoLimiteCredito.bpmn \
+  FluxoCiviaCartaoCreditoLimiteCredito.csv
+```
+
+O arquivo CSV usa `/` como separador para refletir o formato fornecido pela Mesa
+de Crédito.
+
 ## Integração com o Frontend
 - Utilize APIs REST ou GraphQL para se comunicar com o frontend Next.js.
 - Considere utilizar FastAPI para construir endpoints performáticos e tipados.
