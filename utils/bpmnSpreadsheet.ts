@@ -67,13 +67,19 @@ const RISK_LEVELS: RiskLevel[] = ['BAIXO', 'MEDIO', 'ALTO'];
 
 type GroupColumnKey = Exclude<keyof SpreadsheetRow, 'valorEndividamento' | 'score'>;
 
+export type SequenceGroupIndexMap = Partial<Record<GroupColumnKey, number>>;
+
+export interface ApprovalMatrixRow extends SpreadsheetRow {
+  sequenceGroupByColumn: SequenceGroupIndexMap;
+}
+
 interface GroupColumn {
   key: GroupColumnKey;
   label: string;
   groups: string[];
 }
 
-const GROUP_COLUMN_CONFIG: GroupColumn[] = [
+export const GROUP_COLUMN_CONFIG: GroupColumn[] = [
   { key: 'assistentePA', label: 'Assistente PA', groups: ['assistente.pa'] },
   { key: 'consultorPA', label: 'Consultor PA', groups: ['consultor.pa'] },
   {
@@ -126,6 +132,12 @@ const GROUP_LOOKUP = new Map<string, GroupColumnKey>();
 GROUP_COLUMN_CONFIG.forEach(({ key, groups }) => {
   groups.forEach((group) => GROUP_LOOKUP.set(group, key));
 });
+
+export const SPREADSHEET_COLUMNS: Array<{ key: keyof SpreadsheetRow; label: string }> = [
+  { key: 'valorEndividamento', label: 'Valor de Endividamento' },
+  { key: 'score', label: 'Score' },
+  ...GROUP_COLUMN_CONFIG.map(({ key, label }) => ({ key, label })),
+];
 
 const attributeRegex = /([\w:-]+)="([^"]*)"/g;
 
@@ -282,7 +294,8 @@ function traverse(
   context: Record<string, unknown>,
   visited: Set<string>,
   groups: Set<string>,
-  groupedColumns: Set<GroupColumnKey>
+  sequenceGroups: GroupColumnKey[][],
+  sequenceGroupSignatures: Set<string>
 ): void {
   if (!nodeId || visited.has(nodeId)) {
     return;
@@ -305,7 +318,12 @@ function traverse(
       }
     });
     if (columnKeys.size > 1) {
-      columnKeys.forEach((key) => groupedColumns.add(key));
+      const sortedKeys = Array.from(columnKeys).sort();
+      const signature = sortedKeys.join('|');
+      if (!sequenceGroupSignatures.has(signature)) {
+        sequenceGroupSignatures.add(signature);
+        sequenceGroups.push(sortedKeys);
+      }
     }
   }
 
@@ -326,7 +344,15 @@ function traverse(
   }
 
   matched.forEach((flow) => {
-    traverse(process, flow.targetRef, context, nextVisited, groups, groupedColumns);
+    traverse(
+      process,
+      flow.targetRef,
+      context,
+      nextVisited,
+      groups,
+      sequenceGroups,
+      sequenceGroupSignatures
+    );
   });
 }
 
@@ -361,11 +387,22 @@ function formatScoreLabel(risk: RiskLevel): string {
 
 function groupsToRow(
   groups: Set<string>,
-  groupedColumns: Set<GroupColumnKey>,
+  sequenceGroups: GroupColumnKey[][],
   range: ValueRange,
   risk: RiskLevel
-): SpreadsheetRow {
-  const row: SpreadsheetRow = {
+): ApprovalMatrixRow {
+  const sequenceGroupByColumn: SequenceGroupIndexMap = {};
+
+  sequenceGroups.forEach((keys, index) => {
+    if (keys.length < 2) {
+      return;
+    }
+    keys.forEach((key) => {
+      sequenceGroupByColumn[key] = index;
+    });
+  });
+
+  const row: ApprovalMatrixRow = {
     valorEndividamento: range.label,
     score: formatScoreLabel(risk),
     assistentePA: '',
@@ -381,54 +418,202 @@ function groupsToRow(
     superintendente: '',
     diretorSede: '',
     diretorExecutivo: '',
+    sequenceGroupByColumn,
   };
 
   GROUP_COLUMN_CONFIG.forEach(({ key, groups: columnGroups }) => {
     if (columnGroups.some((group) => groups.has(group))) {
-      row[key] = groupedColumns.has(key) ? 'x*' : 'x';
+      row[key] = 'x';
     }
   });
 
   return row;
 }
 
-export function generateApprovalMatrix(xml: string): SpreadsheetRow[] {
+export function generateApprovalMatrix(xml: string): ApprovalMatrixRow[] {
   const process = buildProcess(xml);
   if (!process.startEventId) {
     return [];
   }
 
-  const rows: SpreadsheetRow[] = [];
+  const rows: ApprovalMatrixRow[] = [];
   VALUE_RANGES.forEach((range) => {
     RISK_LEVELS.forEach((risk) => {
       const context = buildContext(range.representativeValue, risk);
       const groups = new Set<string>();
-      const groupedColumns = new Set<GroupColumnKey>();
+      const sequenceGroups: GroupColumnKey[][] = [];
+      const sequenceGroupSignatures = new Set<string>();
       traverse(
         process,
         process.startEventId ?? undefined,
         context,
         new Set<string>(),
         groups,
-        groupedColumns
+        sequenceGroups,
+        sequenceGroupSignatures
       );
-      rows.push(groupsToRow(groups, groupedColumns, range, risk));
+      rows.push(groupsToRow(groups, sequenceGroups, range, risk));
     });
   });
 
   return rows;
 }
 
-export function rowsToDelimitedContent(rows: SpreadsheetRow[], separator = ','): string {
-  const header = [
-    'Valor de Endividamento',
-    'Score',
-    ...GROUP_COLUMN_CONFIG.map((column) => column.label),
+function hexToRgba(hex: string, alpha: number): string {
+  const normalized = hex.replace('#', '');
+  const full =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : normalized.padEnd(6, '0');
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export function rowsToColoredTableImage(
+  rows: ApprovalMatrixRow[],
+  options?: { columnColors?: string[]; sequenceColors?: string[] }
+): string {
+  if (typeof document === 'undefined') {
+    throw new Error('Geração de imagem disponível apenas no ambiente do navegador.');
+  }
+
+  const columns = SPREADSHEET_COLUMNS;
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Não foi possível inicializar o contexto 2D do canvas.');
+  }
+
+  const headerFont = '600 16px "Inter", "Segoe UI", Arial, sans-serif';
+  const cellFont = '400 14px "Inter", "Segoe UI", Arial, sans-serif';
+  const cellPadding = 16;
+  const headerHeight = 48;
+  const rowHeight = 40;
+
+  const columnWidths = columns.map((column) => {
+    context.font = headerFont;
+    let maxWidth = context.measureText(column.label).width;
+    context.font = cellFont;
+    rows.forEach((row) => {
+      const value = String(row[column.key] ?? '');
+      maxWidth = Math.max(maxWidth, context.measureText(value).width);
+    });
+    return Math.ceil(maxWidth + cellPadding * 2);
+  });
+
+  const totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+  const bodyRowCount = Math.max(rows.length, 1);
+  const totalHeight = headerHeight + rowHeight * bodyRowCount;
+
+  canvas.width = totalWidth;
+  canvas.height = totalHeight;
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.textBaseline = 'middle';
+  context.textAlign = 'left';
+
+  const defaultSequenceColors = [
+    '#fde68a',
+    '#bbf7d0',
+    '#bfdbfe',
+    '#fbcfe8',
+    '#ddd6fe',
+    '#f3f4f6',
+    '#fecaca',
+    '#dcfce7',
+    '#bae6fd',
+    '#e9d5ff',
+    '#e2e8f0',
+    '#ffe4e6',
+    '#fef9c3',
+    '#d1d5db',
+    '#f5d0fe',
   ];
-  const lines = rows.map((row) => [
-    row.valorEndividamento,
-    row.score,
-    ...GROUP_COLUMN_CONFIG.map((column) => row[column.key]),
-  ]);
+
+  const palette = options?.sequenceColors?.length
+    ? options.sequenceColors
+    : options?.columnColors?.length
+    ? options.columnColors
+    : defaultSequenceColors;
+
+  let offsetX = 0;
+  columns.forEach((column, columnIndex) => {
+    const columnWidth = columnWidths[columnIndex];
+    context.fillStyle = '#e5e7eb';
+    context.fillRect(offsetX, 0, columnWidth, headerHeight);
+
+    context.font = headerFont;
+    context.fillStyle = '#111827';
+    context.fillText(column.label, offsetX + cellPadding, headerHeight / 2);
+
+    rows.forEach((row, rowIndex) => {
+      const y = headerHeight + rowIndex * rowHeight;
+      const value = String(row[column.key] ?? '');
+      const zebraFill = rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb';
+      let cellFill = zebraFill;
+      let textColor = '#1f2937';
+
+      if (column.key !== 'valorEndividamento' && column.key !== 'score') {
+        const key = column.key as GroupColumnKey;
+        const sequenceIndex = row.sequenceGroupByColumn[key];
+        if (typeof sequenceIndex === 'number' && value) {
+          const sequenceColor = palette[sequenceIndex % palette.length];
+          cellFill = hexToRgba(sequenceColor, 0.45);
+          textColor = '#111827';
+        }
+      }
+
+      context.fillStyle = cellFill;
+      context.fillRect(offsetX, y, columnWidth, rowHeight);
+      context.font = cellFont;
+      context.fillStyle = textColor;
+      context.fillText(value, offsetX + cellPadding, y + rowHeight / 2);
+    });
+
+    offsetX += columnWidth;
+  });
+
+  context.strokeStyle = '#d1d5db';
+  context.lineWidth = 1;
+
+  let currentX = 0;
+  columns.forEach((_, index) => {
+    context.beginPath();
+    context.moveTo(currentX, 0);
+    context.lineTo(currentX, canvas.height);
+    context.stroke();
+    currentX += columnWidths[index];
+  });
+  context.beginPath();
+  context.moveTo(currentX, 0);
+  context.lineTo(currentX, canvas.height);
+  context.stroke();
+
+  context.beginPath();
+  context.moveTo(0, 0);
+  context.lineTo(canvas.width, 0);
+  context.stroke();
+
+  for (let rowIndex = 0; rowIndex <= bodyRowCount; rowIndex += 1) {
+    const y = headerHeight + rowIndex * rowHeight;
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(canvas.width, y);
+    context.stroke();
+  }
+
+  return canvas.toDataURL('image/png');
+}
+
+export function rowsToDelimitedContent(rows: SpreadsheetRow[], separator = ','): string {
+  const header = SPREADSHEET_COLUMNS.map((column) => column.label);
+  const lines = rows.map((row) => SPREADSHEET_COLUMNS.map((column) => row[column.key]));
   return [header.join(separator), ...lines.map((line) => line.join(separator))].join('\n');
 }
