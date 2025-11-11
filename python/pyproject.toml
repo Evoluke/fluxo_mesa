@@ -1,0 +1,22 @@
+[project]
+name = "fluxo-mesa-backend"
+version = "0.1.0"
+description = "Serviços Python de apoio ao fluxo de alçadas da Mesa de Crédito"
+authors = [{ name = "Mesa de Crédito" }]
+requires-python = ">=3.11"
+readme = "README.md"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.8.0,<2.0.0",
+  "pytest>=8.0.0,<9.0.0",
+  "ruff>=0.2.0,<0.5.0"
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
